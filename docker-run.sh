@@ -1,11 +1,11 @@
 #!/bin/bash
 
 function __load_global_variables() {
-_CONTAINER_NAME=$(cat ./info/CONTAINER_NAME)
-_VERSION=$(cat ./info/VERSION)
-_IMAGE_REPO=$(cat ./info/IMAGE_REPO)
+  _CONTAINER_NAME=$(cat ./info/CONTAINER_NAME)
+  _VERSION=$(cat ./info/VERSION)
+  _IMAGE_REPO=$(cat ./info/IMAGE_REPO)
 
-_IMAGE_NAME="${_IMAGE_REPO}/${_CONTAINER_NAME}:${_VERSION}"
+  _IMAGE_NAME="${_IMAGE_REPO}/${_CONTAINER_NAME}:${_VERSION}"
 }
 
 function __load_configure() {

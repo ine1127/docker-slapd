@@ -1,0 +1,128 @@
+#!/bin/bash
+
+source ${LDAP_RUNTIME_DIR}/environment
+
+function __ldap_load_domain() {
+  LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')
+  LDAP_DOMAIN_RDN=$(echo ${LDAP_DOMAIN} | awk -F "." '{print $1}')
+  LDAP_MANAGER_DOMAIN=$(echo dc=${LDAP_MANAGER_DOMAIN} | sed -e 's/\./,dc=/g')
+}
+
+function __ldap_add_manager_pass() {
+  local LDAP_MANAGER_PASS_CRYPT=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+
+  cat << EOF > ${LDAP_WORK_DIR}/add_manager_pass.ldif
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcRootPW
+olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
+
+dn: olcDatabase={2}bdb,cn=config
+changetype: modify
+add: olcRootPW
+olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
+EOF
+}
+
+function __ldap_mod_manager_domain() {
+  cat << EOF > ${LDAP_WORK_DIR}/mod_manager_domain.ldif
+dn: olcDatabase={1}monitor,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to * 
+  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" read
+  by dn.base="cn=${LDAP_MANAGER_NAME},${LDAP_MANAGER_DOMAIN}" read
+  by * none
+
+dn: olcDatabase={2}bdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: ${LDAP_MANAGER_DOMAIN}
+
+dn: olcDatabase={2}bdb,cn=config
+changetype: modify
+replace: olcRootDN
+olcRootDN: cn=${LDAP_MANAGER_NAME},${LDAP_MANAGER_DOMAIN}
+EOF
+}
+
+function __ldap_add_base_domain() {
+  cat << EOF > ${LDAP_WORK_DIR}/add_base_domain.ldif
+dn: ${LDAP_DOMAIN_DN}
+objectClass: dcObject
+objectClass: organization
+dc: ${LDAP_DOMAIN_RDN}
+o: ${LDAP_ORGNAME}
+description: ${LDAP_ORGNAME_DESC}
+EOF
+}
+
+function __ldap_add_unit_user() {
+  cat << EOF > ${LDAP_WORK_DIR}/add_unit_user.ldif
+dn: ou=${LDAP_PEOPLE},${LDAP_DOMAIN_DN}
+objectClass: organizationalUnit
+ou: ${LDAP_PEOPLE}
+description: ${LDAP_PEOPLE_DESC}
+EOF
+}
+
+function __ldap_add_unit_group() {
+  cat << EOF > ${LDAP_WORK_DIR}/add_unit_group.ldif
+dn: ou=${LDAP_GROUP},${LDAP_DOMAIN_DN}
+objectClass: organizationalUnit
+ou: ${LDAP_GROUP}
+description: ${LDAP_GROUP_DESC}
+EOF
+}
+
+function __ldap_add_base_in_config() {
+  cat /etc/openldap/ldap.conf \
+  | grep -v "^#" \
+  | grep -E "^BASE"
+
+  local _exist_base=$?
+
+  if [ "${_exist_base}" -eq "1" ]; then
+    echo "BASE ${LDAP_DOMAIN_DN}" >> /etc/openldap/ldap.conf
+  fi
+}
+
+function __slapd_call_pid() {
+  _PID=
+
+  _PID_FILE="/var/run/openldap/slapd.pid"
+
+  if [ -s ${_PID_FILE} ]; then
+    _PID=$(cat ${_PID_FILE})
+  fi
+
+  _PID=${_PID:-noproc}
+}
+
+function __slapd_start_bg() {
+  if [ "noproc" = "${_PID}" ]; then
+    /usr/sbin/slapd -h "ldap:/// ldapi:///" -u ldap
+  fi
+}
+
+function __slapd_start_proc() {
+  if [ "noproc" = "${_PID}" ]; then
+    /usr/sbin/slapd -d 0 -h "ldap:/// ldapi:///" -u ldap
+  fi
+}
+
+function __slapd_stop_proc() {
+  if [ "noproc" != "${_PID}" ]; then
+    kill -9 ${_PID}
+    rm ${_PID_FILE}
+  fi
+  sleep 1
+}
+
+function __slapd_status_proc() {
+  if [ "noproc" != "${_PID}" ]; then
+    echo "running slapd... [Pid: ${_PID}]"
+  else
+    echo "stopping slapd..."
+  fi
+}

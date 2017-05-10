@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+  centos-ldap:
+    container_name: docker-ldap
+    restart: always
+    image: octbr.ine/docker-ldap:0.1
+    environment: 
+    - all_proxy=${all_proxy}
+    - http_proxy=${http_proxy}
+    - https_proxy=${https_proxy}
+    - ALL_PROXY=${ALL_PROXY}
+    - HTTP_PROXY=${HTTP_PROXY}
+    - HTTPS_PROXY=${HTTPS_PROXY}
+
+    - LDAP_DOMAIN=
+
+    - LDAP_ORGNAME=
+    - LDAP_ORGNAME_DESC=
+    - LDAP_PEOPLE=
+    - LDAP_PEOPLE_DESC=
+    - LDAP_GROUP=
+    - LDAP_GROUP_DESC=
+
+    - LDAP_MANAGER_NAME=
+    - LDAP_MANAGER_PASS=
+    - LDAP_MANAGER_DOMAIN=

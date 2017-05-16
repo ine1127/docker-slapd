@@ -1,15 +1,9 @@
 FROM centos:6.9
 LABEL maintainer "ine1127"
 
-ARG proxy
-
 ENV LDAP_HOME_DIR="/home/ldap-exec"
 ENV LDAP_RUNTIME_DIR="${LDAP_HOME_DIR}/runtime" \
     LDAP_WORK_DIR="${LDAP_HOME_DIR}/init-work"
-ENV http_proxy=${proxy} \
-    https_proxy=${proxy} \
-    HTTP_PROXY=${proxy} \
-    HTTPS_PROXY=${proxy}
 
 COPY entrypoint.sh /sbin/entrypoint.sh
 

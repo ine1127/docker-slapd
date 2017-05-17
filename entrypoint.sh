@@ -7,7 +7,7 @@ if [ ! -z $1 ]; then
     start|stop )
       __slapd_call_pid
       __slapd_start_bg
-      bash ${LDAP_RUNTIME_DIR}/init-setup.sh
+      bash ${LDAP_RUNTIME_DIR}/install.sh
       if [ ! -z ${_PID} ]; then
         case $1 in
           start )

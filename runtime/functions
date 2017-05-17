@@ -113,7 +113,7 @@ function __slapd_start_proc() {
 
 function __slapd_stop_proc() {
   if [ "noproc" != "${_PID}" ]; then
-    kill -9 ${_PID}
+    kill -INT ${_PID}
     rm ${_PID_FILE}
   fi
   sleep 1

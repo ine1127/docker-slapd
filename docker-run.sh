@@ -65,7 +65,7 @@ fi
 
 _BOOT_STATE=${_BOOT_STATE:-"-d=false"}
 
-docker container run -it ${_ONCE} ${_BOOT_STATE} --name ${_CONTAINER_NAME}\
+docker container run -it ${_ONCE} ${_BOOT_STATE} --name ${_CONTAINER_NAME} \
   -e LDAP_DOMAIN=${LDAP_DOMAIN} \
   -e LDAP_ORGNAME=${LDAP_ORGNAME} \
   -e LDAP_ORGNAME_DESC=${LDAP_ORGNAME} \

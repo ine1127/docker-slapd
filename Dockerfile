@@ -1,16 +1,17 @@
 FROM centos:6.9
 LABEL maintainer "ine1127"
 
-ENV LDAP_HOME_DIR="/home/ldap-exec"
+ENV LDAP_HOME_DIR="/home/ldap"
 ENV LDAP_RUNTIME_DIR="${LDAP_HOME_DIR}/runtime" \
-    LDAP_WORK_DIR="${LDAP_HOME_DIR}/init-work"
+    LDAP_WORK_DIR="${LDAP_HOME_DIR}/work"
 
 COPY entrypoint.sh /sbin/entrypoint.sh
 
 RUN yum -y update && \
     yum -y install openldap-servers openldap-clients && \
     rm -rf /var/lib/yum/* && \
-    cp -p /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG && \
+    cp -p /usr/share/openldap-servers/DB_CONFIG.example \
+          /var/lib/ldap/DB_CONFIG && \
     chown -R ldap:ldap /var/lib/ldap && \
     mkdir ${LDAP_HOME_DIR} ${LDAP_WORK_DIR} && \
     chown -R ldap:ldap ${LDAP_HOME_DIR} && \

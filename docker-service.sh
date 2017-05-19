@@ -1,20 +1,13 @@
 #!/bin/bash
 
 function __load_global_variables() {
-  _CONTAINER_NAME=$(cat ./info/CONTAINER_NAME)
-  _VERSION=$(cat ./info/VERSION)
-  _IMAGE_REPO=$(cat ./info/IMAGE_REPO)
+  _BASE_DIR=$(dirname $(readlink -f $0))
+
+  _CONTAINER_NAME=$(cat ${_BASE_DIR}/info/CONTAINER_NAME)
+  _VERSION=$(cat ${_BASE_DIR}/info/VERSION)
+  _IMAGE_REPO=$(cat ${_BASE_DIR}/info/IMAGE_REPO)
 
   _IMAGE_NAME="${_IMAGE_REPO}/${_CONTAINER_NAME}:${_VERSION}"
-
-  _BASE_DIR=$(dirname $(readlink -f $0))
-}
-
-function __load_container_configure(){
-  cat ${_BASE_DIR}/etc/docker-container.conf \
-  | grep -v "^#" \
-  | sed '/^$/d' \
-  | awk '{print "-e",$0}'
 }
 
 function __container_build() {
@@ -35,7 +28,7 @@ function __container_build() {
 function __container_run() {
   docker container run \
     -it --name ${_CONTAINER_NAME} \
-    $(__load_container_configure) \
+    --env-file ${_BASE_DIR}/etc/docker-container.conf \
     ${_BOOT_STATE:-"-d=false"} ${_ONCE} \
     ${_IMAGE_NAME} ${_EXEC_CMD[@]}
 }
@@ -46,6 +39,18 @@ function __container_start() {
 
 function __container_stop() {
   docker container stop ${_CONTAINER_NAME}
+}
+
+function __container_restart() {
+  docker container restart ${_CONTAINER_NAME}
+}
+
+function __container_enable() {
+  docker container update --restart=always ${_CONTAINER_NAME}
+}
+
+function __container_disable() {
+  docker container update --restart=no ${_CONTAINER_NAME}
 }
 
 function __container_remove() {
@@ -96,6 +101,15 @@ if [ $# -ge 1 ]; then
     ;;
     stop )
       __container_stop
+    ;;
+    restart )
+      __container_restart
+    ;;
+    enable )
+      __container_enable
+    ;;
+    disable )
+      __container_disable
     ;;
     container-rm )
       __container_remove

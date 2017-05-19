@@ -1,6 +1,7 @@
 #!/bin/bash
+# functions for entrypoint.sh 
 
-source ${LDAP_RUNTIME_DIR}/environment
+source ${LDAP_RUNTIME_DIR}/environments
 
 function __ldap_load_domain() {
   LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')

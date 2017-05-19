@@ -1,9 +1,10 @@
 # Makefile
-# docker container build & run 
+# docker container build, run, etc...
 
-CONTAINER_NAME = $(shell cat ./info/CONTAINER_NAME)
-VERSION        = $(shell cat ./info/VERSION)
-IMAGE_REPO     = $(shell cat ./info/IMAGE_REPO)
+BASE_DIR       = $(shell dirname $(readlink -f $0))
+CONTAINER_NAME = $(shell cat ${BASE_DIR}/info/CONTAINER_NAME)
+VERSION        = $(shell cat ${BASE_DIR}/info/VERSION)
+IMAGE_REPO     = $(shell cat ${BASE_DIR}/info/IMAGE_REPO)
 IMAGE_NAME     = ${IMAGE_REPO}/${CONTAINER_NAME}
 
 all: build

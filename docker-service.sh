@@ -118,7 +118,7 @@ if [ $# -ge 1 ]; then
       __image_remove
     ;;
     purge )
-      __container_remove
+      __container_remove && \
       __image_remove
     ;;
     login )

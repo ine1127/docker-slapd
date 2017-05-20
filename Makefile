@@ -1,31 +1,31 @@
 # Makefile
 # docker container build, run, etc...
 
-BASE_DIR       = $(shell dirname $(readlink -f $0))
-CONTAINER_NAME = $(shell cat ${BASE_DIR}/info/CONTAINER_NAME)
-VERSION        = $(shell cat ${BASE_DIR}/info/VERSION)
-IMAGE_REPO     = $(shell cat ${BASE_DIR}/info/IMAGE_REPO)
-IMAGE_NAME     = ${IMAGE_REPO}/${CONTAINER_NAME}
+_CONTAINER_NAME = $(shell cat ./info/CONTAINER_NAME)
+_VERSION        = $(shell cat ./info/VERSION)
+_IMAGE_REPO     = $(shell cat ./info/IMAGE_REPO)
+_IMAGE_NAME     = ${_IMAGE_REPO}/${_CONTAINER_NAME}:${_VERSION}
+_CONF_FILE      = ./etc/docker-container.conf
 
 all: build
 
 help:
 	@echo "- Help Menu"
-	@echo "  image name:     ${IMAGE_NAME}:${VERSION}"
-	@echo "  container name: ${CONTAINER_NAME}"
+	@echo "  image name:     ${_IMAGE_NAME}"
+	@echo "  container name: ${_CONTAINER_NAME}"
 	@echo "--"
-	@echo "  make build        - build ${IMAGE_NAME}:${VERSION}"
-	@echo "  make boot         - run ${CONTAINER_NAME} (same as 'make boot-fg')"
-	@echo "  make boot-fg      - run ${CONTAINER_NAME} (fg)"
-	@echo "  make boot-bg      - run ${CONTAINER_NAME} (bg)"
-	@echo "  make onceboot     - run --rm ${CONTAINER_NAME} (same as 'onceboot-fg')"
-	@echo "  make onceboot-fg  - run --rm ${CONTAINER_NAME} (fg)"
-	@echo "  make onceboot-bg  - run --rm ${CONTAINER_NAME} (bg)"
-	@echo "  make start        - start ${CONTAINER_NAME}"
-	@echo "  make login        - login bash on ${CONTAINER_NAME}"
+	@echo "  make build        - build ${_IMAGE_NAME}"
+	@echo "  make boot         - run ${_CONTAINER_NAME} (same as 'make boot-fg')"
+	@echo "  make boot-fg      - run ${_CONTAINER_NAME} (fg)"
+	@echo "  make boot-bg      - run ${_CONTAINER_NAME} (bg)"
+	@echo "  make onceboot     - run --rm ${_CONTAINER_NAME} (same as 'onceboot-fg')"
+	@echo "  make onceboot-fg  - run --rm ${_CONTAINER_NAME} (fg)"
+	@echo "  make onceboot-bg  - run --rm ${_CONTAINER_NAME} (bg)"
+	@echo "  make start        - start ${_CONTAINER_NAME}"
+	@echo "  make login        - login bash on ${_CONTAINER_NAME}"
 
 build:
-	@docker build -t ${IMAGE_NAME}:${VERSION} . \
+	@docker build -t ${_IMAGE_NAME}:${_VERSION} . \
 		--build-arg HTTP_PROXY=${HTTP_PROXY} \
 		--build-arg http_proxy=${http_proxy} \
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
@@ -35,24 +35,58 @@ build:
 		--build-arg NO_PROXY=${NO_PROXY} \
 		--build-arg no_proxy=${no_proxy}
 
+start:
+	@docker container start ${CONTAINER_NAME}
+
+stop:
+	@docker container stop ${CONTAINER_NAME}
+
+restart:
+	@docker container restart ${_CONTAINER_NAME}
+
+enable:
+	@docker container update --restart=always ${_CONTAINER_NAME}
+
+disable:
+	@docker container update --restart=no ${_CONTAINER_NAME}
+
+container-rm:
+	@docker container rm ${_CONTAINER_NAME}
+
+image-rm:
+	@docker image rm ${_IMAGE_NAME}
+
+purge:
+	@docker container rm ${_CONTAINER_NAME}
+	@docker image rm ${_IMAGE_NAME}
+
 boot: boot-fg
 
 onceboot: onceboot-fg
 
 boot-fg:
-	@/bin/bash ./docker-run.sh ${IMAGE_NAME}:${VERSION} fg
+	@docker container run \
+		-it --name ${_CONTAINER_NAME} \
+		--env-file ${_CONF_FILE} \
+		${_IMAGE_NAME}
 
 boot-bg:
-	@/bin/bash ./docker-run.sh ${IMAGE_NAME}:${VERSION} bg
+	@docker container run \
+		-itd --name ${_CONTAINER_NAME} \
+		--env-file ${_CONF_FILE} \
+		${_IMAGE_NAME}
 
 onceboot-fg:
-	@/bin/bash ./docker-run.sh ${IMAGE_NAME}:${VERSION} fg once
+	@docker container run \
+		-it --rm --name ${_CONTAINER_NAME} \
+		--env-file ${_CONF_FILE} \
+		${_IMAGE_NAME}
 
 onceboot-bg:
-	@/bin/bash ./docker-run.sh ${IMAGE_NAME}:${VERSION} bg once
-
-start:
-	@docker container ${CONTAINER_NAME} start
+	@docker container run \
+		-itd --rm --name ${_CONTAINER_NAME} \
+		--env-file ${_CONF_FILE} \
+		${_IMAGE_NAME}
 
 login:
 	@-docker container exec -it ${CONTAINER_NAME} /bin/bash

@@ -3,89 +3,223 @@
 
 source ${LDAP_RUNTIME_DIR}/environments
 
-function __ldap_load_domain() {
-  LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')
-  LDAP_DOMAIN_RDN=$(echo ${LDAP_DOMAIN} | awk -F "." '{print $1}')
-  LDAP_MANAGER_DOMAIN=$(echo dc=${LDAP_MANAGER_DOMAIN} | sed -e 's/\./,dc=/g')
+function __slapd_load_domain() {
+  _LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')
+  _LDAP_DOMAIN_RDN=$(echo ${LDAP_DOMAIN} | awk -F "." '{print $1}')
+  _LDAP_MANAGER_DOMAIN=$(echo dc=${LDAP_MANAGER_DOMAIN} | sed -e 's/\./,dc=/g')
 }
 
-function __ldap_add_manager_pass() {
+function __mkldif_global() {
+  cat << EOF > ${LDAP_WORK_DIR}/global.ldif
+dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcArgsFile: /var/run/openldap/slapd.args
+olcPidFile: /var/run/openldap/slapd.pid
+olcConfigDir: /etc/openldap/slapd.d
+olcAllows: bind_v2
+olcAttributeOptions: lang-
+olcAuthzPolicy: none
+olcConcurrency: 0
+olcConnMaxPending: 100
+olcConnMaxPendingAuth: 1000
+olcGentleHUP: FALSE
+olcIdleTimeout: 0
+olcIndexSubstrIfMaxLen: 4
+olcIndexSubstrIfMinLen: 2
+olcIndexSubstrAnyLen: 4
+olcIndexSubstrAnyStep: 2
+olcIndexIntLen: 4
+olcListenerThreads: 1
+olcLocalSSF: 71
+olcLogLevel: 0
+olcReadOnly: FALSE
+olcReverseLookup: FALSE
+olcSaslSecProps: noplain,noanonymous
+olcSockbufMaxIncoming: 262143
+olcSockbufMaxIncomingAuth: 16777215
+
+EOF
+}
+
+function __mkldif_schema() {
+  cat << EOF > ${LDAP_WORK_DIR}/schema.ldif
+dn: cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: schema
+
+include: file:///etc/openldap/schema/corba.ldif
+include: file:///etc/openldap/schema/core.ldif
+include: file:///etc/openldap/schema/cosine.ldif
+include: file:///etc/openldap/schema/inetorgperson.ldif
+include: file:///etc/openldap/schema/nis.ldif
+include: file:///etc/openldap/schema/openldap.ldif
+
+EOF
+}
+
+function __mkldif_frontend() {
+  cat << EOF > ${LDAP_WORK_DIR}/frontend.ldif
+dn: olcDatabase=frontend,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcFrontendConfig
+olcDatabase: frontend
+olcAddContentAcl: FALSE
+olcLastMod: TRUE
+olcMaxDerefDepth: 0
+olcReadOnly: FALSE
+olcSchemaDN: cn=Subschema
+olcSyncUseSubentry: FALSE
+olcMonitoring: FALSE
+
+EOF
+}
+
+function __mkldif_config() {
   local LDAP_MANAGER_PASS_CRYPT=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
-  cat << EOF > ${LDAP_WORK_DIR}/add_manager_pass.ldif
-dn: olcDatabase={0}config,cn=config
-changetype: modify
-add: olcRootPW
-olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
-
-dn: olcDatabase={2}bdb,cn=config
-changetype: modify
-add: olcRootPW
-olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
-EOF
-}
-
-function __ldap_mod_manager_domain() {
-  cat << EOF > ${LDAP_WORK_DIR}/mod_manager_domain.ldif
-dn: olcDatabase={1}monitor,cn=config
-changetype: modify
-replace: olcAccess
-olcAccess: {0}to * 
-  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" read
-  by dn.base="cn=${LDAP_MANAGER_NAME},${LDAP_MANAGER_DOMAIN}" read
+  cat << EOF > ${LDAP_WORK_DIR}/config.ldif
+dn: olcDatabase=config,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: config
+olcAccess: to *
+  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage
   by * none
+olcAddContentAcl: TRUE
+olcLastMod: TRUE
+olcMaxDerefDepth: 15
+olcReadOnly: FALSE
+olcRootDN: cn=config
+olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
+olcSyncUseSubentry: FALSE
+olcMonitoring: FALSE
 
-dn: olcDatabase={2}bdb,cn=config
-changetype: modify
-replace: olcSuffix
-olcSuffix: ${LDAP_MANAGER_DOMAIN}
-
-dn: olcDatabase={2}bdb,cn=config
-changetype: modify
-replace: olcRootDN
-olcRootDN: cn=${LDAP_MANAGER_NAME},${LDAP_MANAGER_DOMAIN}
 EOF
 }
 
-function __ldap_add_base_domain() {
-  cat << EOF > ${LDAP_WORK_DIR}/add_base_domain.ldif
-dn: ${LDAP_DOMAIN_DN}
+function __mkldif_monitor() {
+  cat << EOF > ${LDAP_WORK_DIR}/monitor.ldif
+dn: olcDatabase=monitor,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: monitor
+olcAccess: to *
+  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" read
+  by dn.base="cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}" read
+  by * none
+olcAddContentAcl: FALSE
+olcLastMod: TRUE
+olcMaxDerefDepth: 15
+olcReadOnly: FALSE
+olcSyncUseSubentry: FALSE
+olcMonitoring: FALSE
+
+EOF
+}
+
+function __mkldif_mdb() {
+  local LDAP_MANAGER_PASS_CRYPT=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+
+  cat << EOF > ${LDAP_WORK_DIR}/mdb.ldif
+dn: olcDatabase=mdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcMdbConfig
+olcDatabase: mdb
+olcReadOnly: FALSE
+olcAddContentAcl: FALSE
+olcLastMod: TRUE
+olcMaxDerefDepth: 15
+olcMonitoring: TRUE
+olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
+olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
+olcSuffix: ${_LDAP_MANAGER_DOMAIN}
+olcSyncUseSubentry: FALSE
+olcDbCheckpoint: 1024 15
+olcDbNoSync: FALSE
+olcDbDirectory: /var/lib/ldap
+olcDbMode: 0600
+olcDbSearchStack: 16
+olcDbIndex: objectClass pres,eq
+olcDbIndex: cn pres,eq,sub
+olcDbIndex: uid pres,eq,sub
+olcDbIndex: uidNumber pres,eq
+olcDbIndex: gidNumber pres,eq
+olcDbIndex: mail pres,eq,sub
+olcDbIndex: ou pres,eq,sub
+olcDbIndex: sn pres,eq,sub
+olcDbIndex: givenName pres,eq,sub
+olcDbIndex: loginShell pres,eq
+olcDbIndex: memberUid pres,eq,sub
+olcDbIndex: nisMapName pres,eq,sub
+olcDbIndex: nisMapEntry pres,eq,sub
+
+EOF
+}
+
+function __mkldif_base_domain() {
+  cat << EOF > ${LDAP_WORK_DIR}/base_domain.ldif
+dn: ${_LDAP_DOMAIN_DN}
 objectClass: dcObject
 objectClass: organization
-dc: ${LDAP_DOMAIN_RDN}
+dc: ${_LDAP_DOMAIN_RDN}
 o: ${LDAP_ORGNAME}
 description: ${LDAP_ORGNAME_DESC}
+
 EOF
 }
 
-function __ldap_add_unit_user() {
-  cat << EOF > ${LDAP_WORK_DIR}/add_unit_user.ldif
-dn: ou=${LDAP_PEOPLE},${LDAP_DOMAIN_DN}
+function __mkldif_unit_user() {
+  cat << EOF > ${LDAP_WORK_DIR}/unit_user.ldif
+dn: ou=${LDAP_PEOPLE},${_LDAP_DOMAIN_DN}
 objectClass: organizationalUnit
 ou: ${LDAP_PEOPLE}
 description: ${LDAP_PEOPLE_DESC}
+
 EOF
 }
 
-function __ldap_add_unit_group() {
-  cat << EOF > ${LDAP_WORK_DIR}/add_unit_group.ldif
-dn: ou=${LDAP_GROUP},${LDAP_DOMAIN_DN}
+function __mkldif_unit_group() {
+  cat << EOF > ${LDAP_WORK_DIR}/unit_group.ldif
+dn: ou=${LDAP_GROUP},${_LDAP_DOMAIN_DN}
 objectClass: organizationalUnit
 ou: ${LDAP_GROUP}
 description: ${LDAP_GROUP_DESC}
+
 EOF
 }
 
-function __ldap_add_base_in_config() {
-  cat /etc/openldap/ldap.conf \
-  | grep -v "^#" \
-  | grep -E "^BASE"
+function __slapd_install() {
+  __mkldif_global
+  __mkldif_schema
+  __mkldif_frontend
+  __mkldif_config
+  __mkldif_monitor
+  __mkldif_mdb
 
-  local _exist_base=$?
+  cat ${LDAP_WORK_DIR}/global.ldif \
+      ${LDAP_WORK_DIR}/schema.ldif \
+      ${LDAP_WORK_DIR}/frontend.ldif \
+      ${LDAP_WORK_DIR}/config.ldif \
+      ${LDAP_WORK_DIR}/monitor.ldif \
+      ${LDAP_WORK_DIR}/mdb.ldif \
+    > ${LDAP_WORK_DIR}/install.ldif
 
-  if [ "${_exist_base}" -eq "1" ]; then
-    echo "BASE ${LDAP_DOMAIN_DN}" >> /etc/openldap/ldap.conf
-  fi
+  runuser -m -s /usr/sbin/slapadd -- ldap -v -F /etc/openldap/slapd.d \
+          -n 0 -l ${LDAP_WORK_DIR}/install.ldif
+
+}
+
+function __slapd_configure() {
+  __mkldif_base_domain
+  __mkldif_unit_user
+  __mkldif_unit_group
+
+  cat ${LDAP_WORK_DIR}/base_domain.ldif \
+      ${LDAP_WORK_DIR}/unit_user.ldif \
+      ${LDAP_WORK_DIR}/unit_group.ldif \
+    > ${LDAP_WORK_DIR}/configure.ldif
+
+  runuser -m -s /usr/sbin/slapadd -- ldap -v -F /etc/openldap/slapd.d \
+          -l ${LDAP_WORK_DIR}/configure.ldif
 }
 
 function __slapd_call_pid() {
@@ -100,19 +234,17 @@ function __slapd_call_pid() {
   _PID=${_PID:-noproc}
 }
 
-function __slapd_start_bg() {
-  if [ "noproc" = "${_PID}" ]; then
-    /usr/sbin/slapd -h "ldap:/// ldapi:///" -u ldap
-  fi
-}
+function __slapd_start() {
+  __slapd_call_pid
 
-function __slapd_start_proc() {
   if [ "noproc" = "${_PID}" ]; then
     /usr/sbin/slapd -d 0 -h "ldap:/// ldapi:///" -u ldap
   fi
 }
 
-function __slapd_stop_proc() {
+function __slapd_stop() {
+  __slapd_call_pid
+
   if [ "noproc" != "${_PID}" ]; then
     kill -INT ${_PID}
     rm ${_PID_FILE}
@@ -120,7 +252,9 @@ function __slapd_stop_proc() {
   sleep 1
 }
 
-function __slapd_status_proc() {
+function __slapd_status() {
+  __slapd_call_pid
+
   if [ "noproc" != "${_PID}" ]; then
     echo "running slapd... [Pid: ${_PID}]"
   else

@@ -8,12 +8,13 @@ ENV LDAP_RUNTIME_DIR="${LDAP_HOME_DIR}/runtime" \
 COPY entrypoint.sh /sbin/entrypoint.sh
 
 RUN yum -y update && \
-    yum -y install openldap-servers openldap-clients && \
+    yum -y install openldap-servers && \
     rm -rf /var/lib/yum/* && \
-    cp -p /usr/share/openldap-servers/DB_CONFIG.example \
-          /var/lib/ldap/DB_CONFIG && \
+    rm -rf /etc/openldap/slapd.d/* && \
+    cp -p  /usr/share/openldap-servers/DB_CONFIG.example \
+           /var/lib/ldap/DB_CONFIG && \
+    mkdir  ${LDAP_HOME_DIR} ${LDAP_WORK_DIR} && \
     chown -R ldap:ldap /var/lib/ldap && \
-    mkdir ${LDAP_HOME_DIR} ${LDAP_WORK_DIR} && \
     chown -R ldap:ldap ${LDAP_HOME_DIR} && \
     chmod 755 /sbin/entrypoint.sh
 

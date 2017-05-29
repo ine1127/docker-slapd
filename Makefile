@@ -25,7 +25,7 @@ help:
 	@echo "  make login        - login bash on ${_CONTAINER_NAME}"
 
 build:
-	@docker build -t ${_IMAGE_NAME}:${_VERSION} . \
+	@docker build -t ${_IMAGE_NAME} . \
 		--build-arg HTTP_PROXY=${HTTP_PROXY} \
 		--build-arg http_proxy=${http_proxy} \
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
@@ -36,10 +36,10 @@ build:
 		--build-arg no_proxy=${no_proxy}
 
 start:
-	@docker container start ${CONTAINER_NAME}
+	@docker container start ${_CONTAINER_NAME}
 
 stop:
-	@docker container stop ${CONTAINER_NAME}
+	@docker container stop ${_CONTAINER_NAME}
 
 restart:
 	@docker container restart ${_CONTAINER_NAME}
@@ -89,4 +89,4 @@ onceboot-bg:
 		${_IMAGE_NAME}
 
 login:
-	@-docker container exec -it ${CONTAINER_NAME} /bin/bash
+	@-docker container exec -it ${_CONTAINER_NAME} /bin/bash

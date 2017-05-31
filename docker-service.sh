@@ -30,7 +30,7 @@ function __container_run() {
     -it --name ${_CONTAINER_NAME} \
     --env-file ${_BASE_DIR}/etc/docker-container.conf \
     ${_BOOT_STATE:-"-d=false"} ${_ONCE} \
-    ${_IMAGE_NAME} ${_EXEC_CMD[@]}
+    ${_ADD_DOCKER_OPTS[@]} ${_IMAGE_NAME}
 }
 
 function __container_start() {
@@ -90,7 +90,7 @@ if [ $# -ge 1 ]; then
       esac
 
       shift 1
-      _EXEC_CMD=($@)
+      _ADD_DOCKER_OPTS=($@)
       __container_run
     ;;
     build )

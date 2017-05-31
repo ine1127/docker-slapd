@@ -61,8 +61,8 @@ function __image_remove() {
   docker image rm ${_IMAGE_NAME}
 }
 
-function __container_login() {
-  docker container exec -it ${_CONTAINER_NAME} /bin/bash
+function __container_exec() {
+  docker container exec -it ${_CONTAINER_NAME} ${_EXEC_CMD[@]} 
 }
 
 __load_global_variables
@@ -122,7 +122,13 @@ if [ $# -ge 1 ]; then
       __image_remove
     ;;
     login )
-      __container_login
+      _EXEC_CMD=("/bin/bash")
+      __container_exec 
+    ;;
+    exec )
+      shift 1
+      _EXEC_CMD=($@)
+      __container_exec 
     ;;
     * )
       echo "missing operand" >&2

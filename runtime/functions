@@ -219,7 +219,7 @@ function __slapd_configure() {
     > ${LDAP_WORK_DIR}/configure.ldif
 
   runuser -m -s /usr/sbin/slapadd -- ldap -v -F /etc/openldap/slapd.d \
-          -l ${LDAP_WORK_DIR}/configure.ldif
+          -n 2 -l ${LDAP_WORK_DIR}/configure.ldif
 }
 
 function __slapd_call_pid() {

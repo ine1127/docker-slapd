@@ -238,7 +238,8 @@ function __slapd_start() {
   __slapd_call_pid
 
   if [ "noproc" = "${_PID}" ]; then
-    /usr/sbin/slapd -d 0 -h "ldap:/// ldapi:///" -u ldap
+    /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
+    -h "ldap:/// ldapi:///" -u ldap
   fi
 }
 

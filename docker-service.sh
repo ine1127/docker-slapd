@@ -1,5 +1,10 @@
 #!/bin/bash
 
+function __echo_exec() {
+  echo $@
+  eval $@
+}
+
 function __load_global_variables() {
   _BASE_DIR=$(dirname $(readlink -f $0))
 
@@ -11,7 +16,7 @@ function __load_global_variables() {
 }
 
 function __container_build() {
-  docker build \
+  __echo_exec docker build \
     --tag="${_IMAGE_NAME}" \
     --build-arg http_proxy="${http_proxy}" \
     --build-arg HTTP_PROXY="${HTTP_PROXY}" \
@@ -26,43 +31,51 @@ function __container_build() {
 }
 
 function __container_run() {
-  docker container run \
+  local env_proxy=$( \
+    printenv |
+    grep -i "_proxy=" |
+    while read -r x
+    do
+      echo -n "-e $x"
+    done \
+  )
+  __echo_exec docker container run \
     -it --name ${_CONTAINER_NAME} \
     --env-file ${_BASE_DIR}/etc/docker-container.conf \
-    ${_BOOT_STATE:-"-d=false"} ${_ONCE} \
+    ${_env_proxy} ${_BOOT_STATE:-"-d=false"} ${_ONCE} \
     ${_ADD_DOCKER_OPTS[@]} ${_IMAGE_NAME}
 }
 
 function __container_start() {
-  docker container start ${_CONTAINER_NAME}
+  __echo_exec docker container start ${_CONTAINER_NAME}
 }
 
 function __container_stop() {
-  docker container stop ${_CONTAINER_NAME}
+  __echo_exec docker container stop ${_CONTAINER_NAME}
 }
 
 function __container_restart() {
-  docker container restart ${_CONTAINER_NAME}
+  __echo_exec docker container restart ${_CONTAINER_NAME}
 }
 
 function __container_enable() {
-  docker container update --restart=always ${_CONTAINER_NAME}
+  __echo_exec docker container update --restart=always ${_CONTAINER_NAME}
 }
 
 function __container_disable() {
-  docker container update --restart=no ${_CONTAINER_NAME}
+  __echo_exec docker container update --restart=no ${_CONTAINER_NAME}
 }
 
 function __container_remove() {
-  docker container rm ${_CONTAINER_NAME}
+  __echo_exec docker container rm ${_CONTAINER_NAME}
 }
 
 function __image_remove() {
-  docker image rm ${_IMAGE_NAME}
+  __echo_exec docker image rm ${_IMAGE_NAME}
 }
 
 function __container_exec() {
-  docker container exec -it ${_CONTAINER_NAME} ${_EXEC_CMD[@]} 
+  __echo_exec docker container exec -it ${_CONTAINER_NAME} ${_EXEC_CMD[@]}
 }
 
 __load_global_variables

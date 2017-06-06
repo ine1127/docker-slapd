@@ -31,12 +31,12 @@ function __container_build() {
 }
 
 function __container_run() {
-  local env_proxy=$( \
+  local _env_proxy=$( \
     printenv |
     grep -i "_proxy=" |
     while read -r x
     do
-      echo -n "-e $x"
+      echo -n " -e $x"
     done \
   )
   __echo_exec docker container run \

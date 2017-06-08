@@ -6,8 +6,9 @@ if [ ! -z $1 ]; then
   case $1 in
     start|init )
       __slapd_load_domain
+      __slapd_deploy
       __slapd_install
-      __slapd_configure
+      __slapd_cleanup
 
       case $1 in
         start )

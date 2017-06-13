@@ -155,6 +155,17 @@ olcDbIndex: nisMapEntry pres,eq,sub
 EOF
 }
 
+function __mkldif_tls() {
+  cat << EOF > ${LDAP_WORK_DIR}/tmp_tls.ldif
+olcTLSCACertificateFile: ${SSL_CERT_DIR}/${SSL_PEM_FILE}
+olcTLSCertificateFile: ${SSL_CERT_DIR}/${SSL_PEM_FILE}
+olcTLSCertificateKeyFile: ${SSL_CERT_DIR}/${SSL_KEY_FILE}
+olcTLSCRLCheck: none
+olcTLSVerifyClient: never
+
+EOF
+}
+
 function __mkldif_base_domain() {
   cat << EOF > ${LDAP_WORK_DIR}/tmp_base_domain.ldif
 dn: ${_LDAP_DOMAIN_DN}
@@ -195,6 +206,28 @@ function __slapd_deploy() {
   __mkldif_monitor
   __mkldif_mdb
 
+  if [ "${SLAPD_SSL_ENABLE}" = "true" ]; then
+    _SLAPD_SSL_ARGS="ldaps:///"
+    __mkldif_tls
+
+    sed -i -e '/^$/d' ${LDAP_WORK_DIR}/tmp_global.ldif
+
+    cat ${LDAP_WORK_DIR}/tmp_global.ldif \
+        ${LDAP_WORK_DIR}/tmp_tls.ldif \
+      > ${LDAP_WORK_DIR}/tmp_swap.ldif
+
+    mv ${LDAP_WORK_DIR}/tmp_swap.ldif ${LDAP_WORK_DIR}/tmp_global.ldif
+
+    if [ "${MAKE_SELF_SIGNED_CERT_ENABLE}" = "true" ]; then
+
+      if [ ! -s "${SSL_CERT_DIR}/${SSL_KEY_FILE}" -a ! -s "${SSL_CERT_DIR}/${SSL_PEM_FILE}" ]; then
+        bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
+      fi
+
+    fi
+
+  fi
+
   cat ${LDAP_WORK_DIR}/tmp_global.ldif   \
       ${LDAP_WORK_DIR}/tmp_schema.ldif   \
       ${LDAP_WORK_DIR}/tmp_frontend.ldif \
@@ -224,14 +257,6 @@ function __slapd_cleanup() {
   rm -rf ${LDAP_WORK_DIR}/tmp_*
 }
 
-function __slapd_tls() {
-  if [ ! -z ${MAKE_SELF_SIGNED_CERT_ENABLE} ]; then
-    if [ "${MAKE_SELF_SIGNED_CERT_ENABLE}" = "true" ]; then
-      bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
-    fi
-  fi
-}
-
 function __slapd_call_pid() {
   _PID=
 
@@ -249,7 +274,7 @@ function __slapd_start() {
 
   if [ "noproc" = "${_PID}" ]; then
     /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
-    -h "ldap:/// ldapi:///" -u ldap
+    -h "ldap:/// ldapi:/// ${_SLAPD_SSL_ARGS}" -u ldap
   fi
 }
 

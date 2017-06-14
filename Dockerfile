@@ -24,7 +24,7 @@ RUN yum -y update && \
 
 COPY runtime/ ${LDAP_RUNTIME_DIR}
 
-EXPOSE 389
+EXPOSE 389/tcp 636/tcp
 
 WORKDIR ${LDAP_HOME_DIR}
 

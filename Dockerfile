@@ -10,6 +10,7 @@ COPY entrypoint.sh /sbin/entrypoint.sh
 RUN yum -y update && \
     yum -y install \
            openldap-servers \
+           expect \
            epel-release && \
     yum -y install lmdb && \
     rm -rf /var/lib/yum/* && \

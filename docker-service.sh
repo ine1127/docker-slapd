@@ -13,6 +13,7 @@ function __load_global_variables() {
   _IMAGE_REPO=$(cat ${_BASE_DIR}/info/IMAGE_REPO)
 
   _IMAGE_NAME="${_IMAGE_REPO}/${_CONTAINER_NAME}:${_VERSION}"
+  _HOSTNAME="$(hostname -f)"
 }
 
 function __container_build() {
@@ -26,7 +27,7 @@ function __container_build() {
     --build-arg FTP_PROXY="${FTP_PROXY}" \
     --build-arg no_proxy="${no_PROXY}" \
     --build-arg NO_PROXY="${NO_PROXY}" \
-    $@ \
+    ${_ADD_DOCKER_OPTS[@]} \
     .
 }
 
@@ -41,6 +42,7 @@ function __container_run() {
   )
   __echo_exec docker container run \
     -it --name ${_CONTAINER_NAME} \
+    -e SSL_HOST_NAME=${_HOSTNAME} \
     --env-file ${_BASE_DIR}/etc/docker-container.conf \
     ${_env_proxy} ${_BOOT_STATE:-"-d=false"} ${_ONCE} \
     ${_ADD_DOCKER_OPTS[@]} ${_IMAGE_NAME}
@@ -107,6 +109,8 @@ if [ $# -ge 1 ]; then
       __container_run
     ;;
     build )
+      shift 1
+      _ADD_DOCKER_OPTS=($@)
       __container_build  
     ;;
     start )

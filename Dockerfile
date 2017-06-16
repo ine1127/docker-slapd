@@ -16,6 +16,7 @@ RUN yum -y update && \
            epel-release && \
     yum -y install lmdb && \
     rm -rf /var/lib/yum/* && \
+    rm -rf /var/cache/yum/* && \
     rm -rf /etc/openldap/slapd.d/* && \
     cp -p  /usr/share/openldap-servers/DB_CONFIG.example \
            /var/lib/ldap/DB_CONFIG && \

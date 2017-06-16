@@ -206,8 +206,16 @@ function __slapd_deploy() {
   __mkldif_monitor
   __mkldif_mdb
 
-  if [ "${SLAPD_SSL_ENABLE}" = "true" ]; then
-    _SLAPD_SSL_ARGS="ldaps:///"
+  if [ "${SLAPD_LDAP}" = "yes" ]; then
+    _SLAPD_LDAP_ARGS="ldap:///"
+  fi
+
+  if [ "${SLAPD_LDAPI}" = "yes" ]; then
+    _SLAPD_LDAPI_ARGS="ldapi:///"
+  fi
+
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
+    _SLAPD_LDAPS_ARGS="ldaps:///"
     __mkldif_tls
 
     sed -i -e '/^$/d' ${LDAP_WORK_DIR}/tmp_global.ldif
@@ -218,7 +226,7 @@ function __slapd_deploy() {
 
     mv ${LDAP_WORK_DIR}/tmp_swap.ldif ${LDAP_WORK_DIR}/tmp_global.ldif
 
-    if [ "${MAKE_SELF_SIGNED_CERT_ENABLE}" = "true" ]; then
+    if [ "${MAKE_SELF_SIGNED_CERT_ENABLE}" = "yes" ]; then
 
       if [ ! -s "${SSL_CERT_DIR}/${SSL_KEY_FILE}" -a ! -s "${SSL_CERT_DIR}/${SSL_PEM_FILE}" ]; then
         bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
@@ -274,7 +282,8 @@ function __slapd_start() {
 
   if [ "noproc" = "${_PID}" ]; then
     /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
-    -h "ldap:/// ldapi:/// ${_SLAPD_SSL_ARGS}" -u ldap
+    -h "${_SLAPD_LDAP_ARGS} ${_SLAPD_LDAPI_ARGS} ${_SLAPD_LDAPS_ARGS}" \
+    -u ldap
   fi
 }
 

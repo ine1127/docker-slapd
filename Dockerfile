@@ -3,7 +3,9 @@ LABEL maintainer "ine1127"
 
 ENV LDAP_HOME_DIR="/home/ldap"
 ENV LDAP_RUNTIME_DIR="${LDAP_HOME_DIR}/runtime" \
-    LDAP_WORK_DIR="${LDAP_HOME_DIR}/work"
+    LDAP_WORK_DIR="${LDAP_HOME_DIR}/work" \
+    LDAP_CERTS_DIR="/etc/openldap/certs" \
+    LDAP_DBDATA_DIR="/var/lib/ldap"
 
 COPY entrypoint.sh /sbin/entrypoint.sh
 
@@ -27,6 +29,8 @@ COPY runtime/ ${LDAP_RUNTIME_DIR}
 EXPOSE 389/tcp 636/tcp
 
 WORKDIR ${LDAP_HOME_DIR}
+
+VOLUME ["${LDAP_CERTS_DIR}", "${LDAP_DBDATA_DIR}"]
 
 ENTRYPOINT ["/sbin/entrypoint.sh"]
 CMD ["start"]

@@ -198,14 +198,7 @@ description: ${LDAP_GROUP_DESC}
 EOF
 }
 
-function __slapd_deploy() {
-  __mkldif_global
-  __mkldif_schema
-  __mkldif_frontend
-  __mkldif_config
-  __mkldif_monitor
-  __mkldif_mdb
-
+function __set_slapd_uri() {
   if [ "${SLAPD_LDAP}" = "yes" ]; then
     _SLAPD_LDAP_ARGS="ldap:///"
   fi
@@ -216,25 +209,49 @@ function __slapd_deploy() {
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
     _SLAPD_LDAPS_ARGS="ldaps:///"
-    __mkldif_tls
-
-    sed -i -e '/^$/d' ${LDAP_WORK_DIR}/tmp_global.ldif
-
-    cat ${LDAP_WORK_DIR}/tmp_global.ldif \
-        ${LDAP_WORK_DIR}/tmp_tls.ldif \
-      > ${LDAP_WORK_DIR}/tmp_swap.ldif
-
-    mv ${LDAP_WORK_DIR}/tmp_swap.ldif ${LDAP_WORK_DIR}/tmp_global.ldif
-
-    if [ "${MAKE_SELF_SIGNED_CERT_ENABLE}" = "yes" ]; then
-
-      if [ ! -s "${SSL_CERT_DIR}/${SSL_KEY_FILE}" -a ! -s "${SSL_CERT_DIR}/${SSL_PEM_FILE}" ]; then
-        bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
-      fi
-
-    fi
-
   fi
+}
+
+function __join_ldif() {
+  if [ $# -ne 2 ]; then
+    if [ ! -s $1 -o ! -s $2 ]; then
+      return 1
+    fi
+  fi
+
+  sed -i -e '/^$/d' $1
+
+  cat $1 $2 > ${LDAP_WORK_DIR}/tmp_swap.ldif
+
+  mv ${LDAP_WORK_DIR}/tmp_swap.ldif $1
+}
+
+function __mkcert_selfsigned() {
+  if [ "${MAKE_SELFSIGNED_CERTIFICATE}" = "yes" ]; then
+
+    if [ ! -s "${SSL_CERT_DIR}/${SSL_KEY_FILE}" -a ! -s "${SSL_CERT_DIR}/${SSL_PEM_FILE}" ]; then
+      bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
+    fi
+  fi
+}
+
+function __slapd_deploy() {
+  __mkldif_global
+  __mkldif_schema
+  __mkldif_frontend
+  __mkldif_config
+  __mkldif_monitor
+  __mkldif_mdb
+  __mkldif_tls
+
+  __set_slapd_uri
+
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
+    __join_ldif ${LDAP_WORK_DIR}/tmp_global.ldif \
+                ${LDAP_WORK_DIR}/tmp_tls.ldif
+  fi
+
+  __mkcert_selfsigned
 
   cat ${LDAP_WORK_DIR}/tmp_global.ldif   \
       ${LDAP_WORK_DIR}/tmp_schema.ldif   \

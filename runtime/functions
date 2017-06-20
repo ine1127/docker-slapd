@@ -162,6 +162,7 @@ olcTLSCertificateFile: ${SSL_CERT_DIR}/${SSL_PEM_FILE}
 olcTLSCertificateKeyFile: ${SSL_CERT_DIR}/${SSL_KEY_FILE}
 olcTLSCRLCheck: none
 olcTLSVerifyClient: never
+olcTLSProtocolMin: 3.1
 
 EOF
 }
@@ -232,6 +233,7 @@ function __mkcert_selfsigned() {
     if [ ! -s "${SSL_CERT_DIR}/${SSL_KEY_FILE}" -a ! -s "${SSL_CERT_DIR}/${SSL_PEM_FILE}" ]; then
       bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
     fi
+
   fi
 }
 

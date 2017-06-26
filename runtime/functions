@@ -157,12 +157,13 @@ EOF
 
 function __mkldif_tls() {
   cat << EOF > ${LDAP_WORK_DIR}/tmp_tls.ldif
-olcTLSCACertificateFile: ${SSL_CERT_DIR}/${SSL_PEM_FILE}
-olcTLSCertificateFile: ${SSL_CERT_DIR}/${SSL_PEM_FILE}
-olcTLSCertificateKeyFile: ${SSL_CERT_DIR}/${SSL_KEY_FILE}
+olcTLSCACertificatePath: ${LDAP_CERTS_DIR}
+olcTLSCACertificateFile: ${LDAP_CERTS_DIR}/${CA_PEM_FILE}
+olcTLSCertificateFile: "OpenLDAP Server"
+olcTLSCertificateKeyFile: ${LDAP_CERTS_DIR}/password
 olcTLSCRLCheck: none
 olcTLSVerifyClient: never
-olcTLSProtocolMin: 3.1
+olcTLSProtocolMin: 3.2
 
 EOF
 }
@@ -214,25 +215,83 @@ function __set_slapd_uri() {
 }
 
 function __join_ldif() {
+  local _src_ldif="$1"
+  local _add_ldif="$2"
+
   if [ $# -ne 2 ]; then
-    if [ ! -s $1 -o ! -s $2 ]; then
+    if [ ! -s ${_src_ldif} -o ! -s ${_add_ldif} ]; then
       return 1
     fi
   fi
 
-  sed -i -e '/^$/d' $1
+  sed -i -e '/^$/d' ${_src_ldif}
 
-  cat $1 $2 > ${LDAP_WORK_DIR}/tmp_swap.ldif
+  cat ${_src_ldif} ${_add_ldif} > ${LDAP_WORK_DIR}/tmp_swap.ldif
 
-  mv ${LDAP_WORK_DIR}/tmp_swap.ldif $1
+  mv ${LDAP_WORK_DIR}/tmp_swap.ldif ${_src_ldif}
+  rm ${_add_ldif}
 }
 
 function __mkcert_selfsigned() {
   if [ "${MAKE_SELFSIGNED_CERTIFICATE}" = "yes" ]; then
 
-    if [ ! -s "${SSL_CERT_DIR}/${SSL_KEY_FILE}" -a ! -s "${SSL_CERT_DIR}/${SSL_PEM_FILE}" ]; then
-      bash ${LDAP_RUNTIME_DIR}/tls/mktlskey.sh
+    if [ ! -s "${LDAP_NSSDB_KEY}" -a ! -s ${LDAP_NSSDB_CERT} -a ! -s ${LDAP_NSSDB_SECMOD} ]; then
+      dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
+      > ${LDAP_NSSDB_NOISE}
+      echo ${NSSDB_PASS} > ${LDAP_NSSDB_PASS}
+
+      # Create New Key Databases
+      certutil -N \
+        -d "${LDAP_CERTS_DIR}" \
+        -f "${LDAP_NSSDB_PASS}"
+
+      # Create New CA Certicicate
+      certutil -S -x \
+        -d "${LDAP_CERTS_DIR}" \
+        -f "${LDAP_NSSDB_PASS}" \
+        -z "${LDAP_NSSDB_NOISE}" \
+        -n "CA certificate" \
+        -s "CN=CAcert" \
+        -t "CT,," \
+        -k "rsa" \
+        -Z "SHA512" \
+        -g "4096" \
+        -v "120"
+
+      # Create New Certificate Signed CA
+      certutil -S \
+        -d "${LDAP_CERTS_DIR}" \
+        -f "${LDAP_NSSDB_PASS}" \
+        -z "${LDAP_NSSDB_NOISE}" \
+        -c "CA certificate" \
+        -n "OpenLDAP Server" \
+        -s "CN=${SSL_HOST_NAME}" \
+        -t "u,u,u" \
+        -k "rsa" \
+        -Z "SHA512" \
+        -g "4096" \
+        -v "120" \
+        -8 "${SSL_HOST_NAME},localhost,localhost.localdomain"
+
     fi
+
+    if [ ! -s "${LDAP_CERTS_DIR}/CA.pem" ]; then
+      certutil -L \
+        -d "${LDAP_CERTS_DIR}" \
+        -f "${LDAP_NSSDB_PASS}" \
+        -n "CA certificate" \
+        -a > ${LDAP_CERTS_DIR}/${CA_PEM_FILE}
+    fi
+
+    if [ ! -s ${LDAP_CERTS_DIR}/server.pem ]; then
+      certutil -L \
+        -d ${LDAP_CERTS_DIR} \
+        -f ${LDAP_NSSDB_PASS} \
+        -n "OpenLDAP Server" \
+        -a > ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
+    fi
+
+  chown -R ldap:ldap ${LDAP_CERTS_DIR}
 
   fi
 }

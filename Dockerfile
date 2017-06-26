@@ -7,6 +7,12 @@ ENV LDAP_RUNTIME_DIR="${LDAP_HOME_DIR}/runtime" \
     LDAP_CERTS_DIR="/etc/openldap/certs" \
     LDAP_DBDATA_DIR="/var/lib/ldap"
 
+ENV LDAP_NSSDB_KEY="${LDAP_CERTS_DIR}/key3.db" \
+    LDAP_NSSDB_CERT="${LDAP_CERTS_DIR}/cert8.db" \
+    LDAP_NSSDB_SECMOD="${LDAP_CERTS_DIR}/secmod.db" \
+    LDAP_NSSDB_NOISE="${LDAP_CERTS_DIR}/noise" \
+    LDAP_NSSDB_PASS="${LDAP_CERTS_DIR}/password"
+
 COPY entrypoint.sh /sbin/entrypoint.sh
 
 RUN yum -y update && \
@@ -18,6 +24,8 @@ RUN yum -y update && \
     rm -rf /var/lib/yum/* && \
     rm -rf /var/cache/yum/* && \
     rm -rf /etc/openldap/slapd.d/* && \
+    rm -rf ${LDAP_CERTS_DIR}/* && \
+    rm -rf ${LDAP_CERTS_DIR}/.??* && \
     cp -p  /usr/share/openldap-servers/DB_CONFIG.example \
            /var/lib/ldap/DB_CONFIG && \
     mkdir  ${LDAP_HOME_DIR} ${LDAP_WORK_DIR} && \

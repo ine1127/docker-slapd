@@ -241,59 +241,58 @@ function __mkcert_selfsigned() {
       echo ${NSSDB_PASS} > ${LDAP_NSSDB_PASS}
 
       # Create New Key Databases
-      certutil -N \
-        -d "${LDAP_CERTS_DIR}" \
+      certutil -N                \
+        -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"
 
       # Create New CA Certicicate
-      certutil -S -x \
-        -d "${LDAP_CERTS_DIR}" \
-        -f "${LDAP_NSSDB_PASS}" \
+      certutil -S -x             \
+        -d "${LDAP_CERTS_DIR}"   \
+        -f "${LDAP_NSSDB_PASS}"  \
         -z "${LDAP_NSSDB_NOISE}" \
-        -n "CA certificate" \
-        -s "CN=CAcert" \
-        -t "CT,," \
-        -k "rsa" \
-        -Z "SHA512" \
-        -g "4096" \
+        -n "CA certificate"      \
+        -s "CN=CAcert"           \
+        -t "CT,,"                \
+        -k "rsa"                 \
+        -Z "SHA512"              \
+        -g "4096"                \
         -v "120"
 
       # Create New Certificate Signed CA
-      certutil -S \
-        -d "${LDAP_CERTS_DIR}" \
-        -f "${LDAP_NSSDB_PASS}" \
+      certutil -S                \
+        -d "${LDAP_CERTS_DIR}"   \
+        -f "${LDAP_NSSDB_PASS}"  \
         -z "${LDAP_NSSDB_NOISE}" \
-        -c "CA certificate" \
-        -n "OpenLDAP Server" \
+        -c "CA certificate"      \
+        -n "OpenLDAP Server"     \
         -s "CN=${SSL_HOST_NAME}" \
-        -t "u,u,u" \
-        -k "rsa" \
-        -Z "SHA512" \
-        -g "4096" \
-        -v "120" \
+        -t "u,u,u"               \
+        -k "rsa"                 \
+        -Z "SHA512"              \
+        -g "4096"                \
+        -v "120"                 \
         -8 "${SSL_HOST_NAME},localhost,localhost.localdomain"
 
     fi
 
     if [ ! -s "${LDAP_CERTS_DIR}/CA.pem" ]; then
-      certutil -L \
-        -d "${LDAP_CERTS_DIR}" \
-        -f "${LDAP_NSSDB_PASS}" \
-        -n "CA certificate" \
+      certutil -L                \
+        -d "${LDAP_CERTS_DIR}"   \
+        -f "${LDAP_NSSDB_PASS}"  \
+        -n "CA certificate"      \
         -a > ${LDAP_CERTS_DIR}/${CA_PEM_FILE}
     fi
 
     if [ ! -s ${LDAP_CERTS_DIR}/server.pem ]; then
-      certutil -L \
-        -d ${LDAP_CERTS_DIR} \
-        -f ${LDAP_NSSDB_PASS} \
-        -n "OpenLDAP Server" \
+      certutil -L                \
+        -d ${LDAP_CERTS_DIR}     \
+        -f ${LDAP_NSSDB_PASS}    \
+        -n "OpenLDAP Server"     \
         -a > ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
     fi
 
-  chown -R ldap:ldap ${LDAP_CERTS_DIR}
-
   fi
+
 }
 
 function __slapd_deploy() {
@@ -313,6 +312,10 @@ function __slapd_deploy() {
   fi
 
   __mkcert_selfsigned
+
+  if [ -O ${LDAP_CERTS_DIR} -o -G ${LDAP_CERTS_DIR} ]; then
+    chown -R ldap:ldap ${LDAP_CERTS_DIR}
+  fi
 
   cat ${LDAP_WORK_DIR}/tmp_global.ldif   \
       ${LDAP_WORK_DIR}/tmp_schema.ldif   \

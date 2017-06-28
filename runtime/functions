@@ -16,7 +16,6 @@ objectClass: olcGlobal
 cn: config
 olcArgsFile: /var/run/openldap/slapd.args
 olcPidFile: /var/run/openldap/slapd.pid
-olcConfigDir: /etc/openldap/slapd.d
 olcAllows: bind_v2
 olcAttributeOptions: lang-
 olcAuthzPolicy: none
@@ -135,7 +134,7 @@ olcSuffix: ${_LDAP_MANAGER_DOMAIN}
 olcSyncUseSubentry: FALSE
 olcDbCheckpoint: 1024 15
 olcDbNoSync: FALSE
-olcDbDirectory: /var/lib/ldap
+olcDbDirectory: ${LDAP_DBDATA_DIR}
 olcDbMode: 0600
 olcDbSearchStack: 16
 olcDbIndex: objectClass pres,eq
@@ -200,6 +199,14 @@ description: ${LDAP_GROUP_DESC}
 EOF
 }
 
+function __switch_user() {
+  local _exec_cmd="$1"
+  shift 1
+  local _exec_option="$@"
+
+  runuser -m -s ${_exec_cmd} -- ldap ${_exec_option}
+}
+
 function __set_slapd_uri() {
   if [ "${SLAPD_LDAP}" = "yes" ]; then
     _SLAPD_LDAP_ARGS="ldap:///"
@@ -241,7 +248,7 @@ function __mkcert_selfsigned() {
       echo ${NSSDB_PASS} > ${LDAP_NSSDB_PASS}
 
       # Create New Key Databases
-      certutil -N                \
+      __switch_user /usr/bin/certutil -N  \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"
 
@@ -272,10 +279,9 @@ function __mkcert_selfsigned() {
         -g "4096"                \
         -v "120"                 \
         -8 "${SSL_HOST_NAME},localhost,localhost.localdomain"
-
     fi
 
-    if [ ! -s "${LDAP_CERTS_DIR}/CA.pem" ]; then
+    if [ ! -s "${LDAP_CERTS_DIR}/ca.pem" ]; then
       certutil -L                \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
@@ -285,14 +291,13 @@ function __mkcert_selfsigned() {
 
     if [ ! -s ${LDAP_CERTS_DIR}/server.pem ]; then
       certutil -L                \
-        -d ${LDAP_CERTS_DIR}     \
-        -f ${LDAP_NSSDB_PASS}    \
+        -d "${LDAP_CERTS_DIR}"   \
+        -f "${LDAP_NSSDB_PASS}"  \
         -n "OpenLDAP Server"     \
         -a > ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
     fi
 
   fi
-
 }
 
 function __slapd_deploy() {
@@ -313,10 +318,6 @@ function __slapd_deploy() {
 
   __mkcert_selfsigned
 
-  if [ -O ${LDAP_CERTS_DIR} -o -G ${LDAP_CERTS_DIR} ]; then
-    chown -R ldap:ldap ${LDAP_CERTS_DIR}
-  fi
-
   cat ${LDAP_WORK_DIR}/tmp_global.ldif   \
       ${LDAP_WORK_DIR}/tmp_schema.ldif   \
       ${LDAP_WORK_DIR}/tmp_frontend.ldif \
@@ -336,10 +337,10 @@ function __slapd_deploy() {
 }
 
 function __slapd_install() {
-  runuser -m -s /usr/sbin/slapadd -- ldap -v -F /etc/openldap/slapd.d \
-          -n 0 -l ${LDAP_WORK_DIR}/config.ldif
-  runuser -m -s /usr/sbin/slapadd -- ldap -v -F /etc/openldap/slapd.d \
-          -n 2 -l ${LDAP_WORK_DIR}/base.ldif
+  __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
+    -n 0 -l ${LDAP_WORK_DIR}/config.ldif
+  __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
+    -n 2 -l ${LDAP_WORK_DIR}/base.ldif
 }
 
 function __slapd_cleanup() {
@@ -364,6 +365,7 @@ function __slapd_start() {
   if [ "noproc" = "${_PID}" ]; then
     /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
     -h "${_SLAPD_LDAP_ARGS} ${_SLAPD_LDAPI_ARGS} ${_SLAPD_LDAPS_ARGS}" \
+    -F ${LDAP_CONFIG_DIR} \
     -u ldap
   fi
 }
@@ -375,7 +377,6 @@ function __slapd_stop() {
     kill -INT ${_PID}
     rm ${_PID_FILE}
   fi
-  sleep 1
 }
 
 function __slapd_status() {

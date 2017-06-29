@@ -38,7 +38,7 @@ EXPOSE 389/tcp 636/tcp
 
 WORKDIR ${LDAP_ROOT_DIR}
 
-VOLUME ["${LDAP_CERTS_DIR}", "${LDAP_DBDATA_DIR}"]
+VOLUME ["${LDAP_CERTS_DIR}", "${LDAP_DBDATA_DIR}", "${LDAP_CONFIG_DIR}"]
 
 ENTRYPOINT ["/sbin/entrypoint.sh"]
 CMD ["start"]

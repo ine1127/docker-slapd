@@ -42,7 +42,7 @@ function __container_run() {
   )
   __echo_exec docker container run \
     -it --name ${_CONTAINER_NAME} \
-    -e SSL_HOST_NAME=${_HOSTNAME} \
+    -e SSL_HOSTNAME=${_HOSTNAME} \
     --env-file ${_BASE_DIR}/etc/docker-container.conf \
     ${_env_proxy} ${_BOOT_STATE:-"-d=false"} ${_ONCE} \
     ${_ADD_DOCKER_OPTS[@]} ${_IMAGE_NAME}

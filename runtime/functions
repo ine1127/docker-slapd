@@ -272,13 +272,13 @@ function __mkcert_selfsigned() {
         -z "${LDAP_NSSDB_NOISE}" \
         -c "CA certificate"      \
         -n "OpenLDAP Server"     \
-        -s "CN=${SSL_HOST_NAME}" \
+        -s "CN=${SSL_HOSTNAME}" \
         -t "u,u,u"               \
         -k "rsa"                 \
         -Z "SHA512"              \
         -g "4096"                \
         -v "120"                 \
-        -8 "${SSL_HOST_NAME},localhost,localhost.localdomain"
+        -8 "${SSL_HOSTNAME},localhost,localhost.localdomain"
     fi
 
     if [ ! -s "${LDAP_CERTS_DIR}/ca.pem" ]; then

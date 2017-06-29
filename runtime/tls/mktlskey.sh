@@ -43,7 +43,7 @@ expect {
 
 expect {
   -exact \"Common Name (eg, your name or your server\'s hostname) \[\]:\" {
-    send \"${SSL_HOST_NAME}\n\"
+    send \"${SSL_HOSTNAME}\n\"
   }
 }
 

@@ -24,8 +24,8 @@ RUN yum -y update && \
     rm -rf /var/lib/yum/* && \
     rm -rf /var/cache/yum/* && \
     rm -rf /etc/openldap/slapd.d/* && \
-    mkdir  ${LDAP_ROOT_DIR} ${LDAP_WORK_DIR} && \
-    mkdir  ${LDAP_CERTS_DIR} ${LDAP_DBDATA_DIR} && \
+    mkdir  ${LDAP_ROOT_DIR} ${LDAP_WORK_DIR} \
+           ${LDAP_CERTS_DIR} ${LDAP_DBDATA_DIR} && \
     mkdir  -m 0750 ${LDAP_CONFIG_DIR} && \
     chown  -R ldap:ldap ${LDAP_ROOT_DIR} && \
     cp -p  /usr/share/openldap-servers/DB_CONFIG.example \

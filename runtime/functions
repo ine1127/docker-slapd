@@ -218,6 +218,8 @@ function __set_slapd_uri() {
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
     _SLAPD_LDAPS_ARGS="ldaps:///"
+    __join_ldif ${LDAP_WORK_DIR}/tmp_global.ldif \
+                ${LDAP_WORK_DIR}/tmp_tls.ldif
   fi
 }
 
@@ -310,12 +312,6 @@ function __slapd_deploy() {
   __mkldif_tls
 
   __set_slapd_uri
-
-  if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    __join_ldif ${LDAP_WORK_DIR}/tmp_global.ldif \
-                ${LDAP_WORK_DIR}/tmp_tls.ldif
-  fi
-
   __mkcert_selfsigned
 
   cat ${LDAP_WORK_DIR}/tmp_global.ldif   \

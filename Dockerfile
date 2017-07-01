@@ -28,8 +28,6 @@ RUN yum -y update && \
            ${LDAP_CERTS_DIR} ${LDAP_DBDATA_DIR} && \
     mkdir  -m 0750 ${LDAP_CONFIG_DIR} && \
     chown  -R ldap:ldap ${LDAP_ROOT_DIR} && \
-    cp -p  /usr/share/openldap-servers/DB_CONFIG.example \
-           ${LDAP_DBDATA_DIR}/DB_CONFIG && \
     chmod  755 /sbin/entrypoint.sh
 
 COPY runtime/ ${LDAP_RUNTIME_DIR}

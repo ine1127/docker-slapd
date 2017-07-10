@@ -158,7 +158,7 @@ function __mkldif_tls() {
   cat << EOF > ${LDAP_WORK_DIR}/tmp_tls.ldif
 olcTLSCACertificatePath: ${LDAP_CERTS_DIR}
 olcTLSCACertificateFile: ${LDAP_CERTS_DIR}/${CA_PEM_FILE}
-olcTLSCertificateFile: "OpenLDAP Server"
+olcTLSCertificateFile: "${NSSDB_CERT_NAME}"
 olcTLSCertificateKeyFile: ${LDAP_CERTS_DIR}/password
 olcTLSCRLCheck: none
 olcTLSVerifyClient: never
@@ -244,6 +244,8 @@ function __join_ldif() {
 function __mkcert_selfsigned() {
   if [ "${MAKE_SELFSIGNED_CERTIFICATE}" = "yes" ]; then
 
+set -x
+
     if [ ! -s "${LDAP_NSSDB_KEY}" -a ! -s ${LDAP_NSSDB_CERT} -a ! -s ${LDAP_NSSDB_SECMOD} ]; then
       dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
       > ${LDAP_NSSDB_NOISE}
@@ -259,7 +261,7 @@ function __mkcert_selfsigned() {
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
         -z "${LDAP_NSSDB_NOISE}" \
-        -n "CA certificate"      \
+        -n "${NSSDB_CACERT_NAME}"\
         -s "CN=CAcert"           \
         -t "CT,,"                \
         -k "rsa"                 \
@@ -272,8 +274,8 @@ function __mkcert_selfsigned() {
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
         -z "${LDAP_NSSDB_NOISE}" \
-        -c "CA certificate"      \
-        -n "OpenLDAP Server"     \
+        -c "${NSSDB_CACERT_NAME}"\
+        -n "${NSSDB_CERT_NAME}"  \
         -s "CN=${SSL_HOSTNAME}" \
         -t "u,u,u"               \
         -k "rsa"                 \
@@ -287,7 +289,7 @@ function __mkcert_selfsigned() {
       certutil -L                \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
-        -n "CA certificate"      \
+        -n "${NSSDB_CACERT_NAME}"\
         -a > ${LDAP_CERTS_DIR}/${CA_PEM_FILE}
     fi
 
@@ -295,10 +297,12 @@ function __mkcert_selfsigned() {
       certutil -L                \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
-        -n "OpenLDAP Server"     \
+        -n "${NSSDB_CERT_NAME}"  \
         -a > ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
     fi
 
+
+set +x
   fi
 }
 

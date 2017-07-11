@@ -244,8 +244,6 @@ function __join_ldif() {
 function __mkcert_selfsigned() {
   if [ "${MAKE_SELFSIGNED_CERTIFICATE}" = "yes" ]; then
 
-set -x
-
     if [ ! -s "${LDAP_NSSDB_KEY}" -a ! -s ${LDAP_NSSDB_CERT} -a ! -s ${LDAP_NSSDB_SECMOD} ]; then
       dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
       > ${LDAP_NSSDB_NOISE}
@@ -301,8 +299,6 @@ set -x
         -a > ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
     fi
 
-
-set +x
   fi
 }
 

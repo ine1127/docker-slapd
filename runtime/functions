@@ -333,10 +333,14 @@ function __slapd_deploy() {
 }
 
 function __slapd_install() {
-  __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
-    -n 0 -l ${LDAP_WORK_DIR}/config.ldif
-  __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
-    -n 2 -l ${LDAP_WORK_DIR}/base.ldif
+  if [ ! -e ${LDAP_CONFIG_DIR}/SLAPD_INSTALLED ]; then
+    __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
+      -n 0 -l ${LDAP_WORK_DIR}/config.ldif
+    __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
+      -n 2 -l ${LDAP_WORK_DIR}/base.ldif
+
+    touch ${LDAP_CONFIG_DIR}/SLAPD_INSTALLED
+  fi
 }
 
 function __slapd_cleanup() {

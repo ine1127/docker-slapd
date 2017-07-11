@@ -285,7 +285,7 @@ set -x
         -8 "${SSL_HOSTNAME},localhost,localhost.localdomain"
     fi
 
-    if [ ! -s "${LDAP_CERTS_DIR}/ca.pem" ]; then
+    if [ ! -s ${LDAP_CERTS_DIR}/${CA_PEM_FILE} ]; then
       certutil -L                \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
@@ -293,7 +293,7 @@ set -x
         -a > ${LDAP_CERTS_DIR}/${CA_PEM_FILE}
     fi
 
-    if [ ! -s ${LDAP_CERTS_DIR}/server.pem ]; then
+    if [ ! -s ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE} ]; then
       certutil -L                \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \

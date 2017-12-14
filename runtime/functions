@@ -243,16 +243,28 @@ function __join_ldif() {
 
 function __mkcert_selfsigned() {
   if [ "${GENERATE_SELFSIGNED_CACERT}" = "yes" ]; then
-
     if [ ! -s "${LDAP_NSSDB_KEY}" -a ! -s ${LDAP_NSSDB_CERT} -a ! -s ${LDAP_NSSDB_SECMOD} ]; then
+      __switch_user /usr/bin/test -O ${LDAP_CERTS_DIR} || \
+        chown ldap ${LDAP_CERTS_DIR}
+
+      umask 0026
+
       dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
-      > ${LDAP_NSSDB_NOISE}
+        > ${LDAP_NSSDB_NOISE}
       echo ${NSSDB_PASS} > ${LDAP_NSSDB_PASS}
+
+      __switch_user /usr/bin/test -G ${LDAP_NSSDB_NOISE} || \
+        chgrp ldap ${LDAP_NSSDB_NOISE}
+
+      __switch_user /usr/bin/test -G ${LDAP_NSSDB_PASS} || \
+        chgrp ldap ${LDAP_NSSDB_PASS}
 
       # Create New Key Databases
       __switch_user /usr/bin/certutil -N  \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"
+
+     umask 0022
 
       # Create New CA Certicicate
       certutil -S -x             \
@@ -274,7 +286,7 @@ function __mkcert_selfsigned() {
         -z "${LDAP_NSSDB_NOISE}" \
         -c "${NSSDB_CACERT_NAME}"\
         -n "${NSSDB_CERT_NAME}"  \
-        -s "CN=${SSL_HOSTNAME}" \
+        -s "CN=${SSL_HOSTNAME}"  \
         -t "u,u,u"               \
         -k "rsa"                 \
         -Z "SHA512"              \
@@ -298,7 +310,6 @@ function __mkcert_selfsigned() {
         -n "${NSSDB_CERT_NAME}"  \
         -a > ${LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
     fi
-
   fi
 }
 
@@ -333,13 +344,19 @@ function __slapd_deploy() {
 }
 
 function __slapd_install() {
-  if [ ! -e ${LDAP_CONFIG_DIR}/SLAPD_INSTALLED ]; then
+  __switch_user /usr/bin/test -O ${LDAP_CONFIG_DIR} || \
+    chown ldap ${LDAP_CONFIG_DIR}
+
+  __switch_user /usr/bin/test -O ${LDAP_DBDATA_DIR} || \
+    chown ldap ${LDAP_DBDATA_DIR}
+
+  if [ ! -e ${LDAP_CONFIG_DIR}/.slapd_installed ]; then
     __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
       -n 0 -l ${LDAP_WORK_DIR}/config.ldif
     __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
       -n 2 -l ${LDAP_WORK_DIR}/base.ldif
 
-    touch ${LDAP_CONFIG_DIR}/SLAPD_INSTALLED
+    touch ${LDAP_CONFIG_DIR}/.slapd_installed
   fi
 }
 

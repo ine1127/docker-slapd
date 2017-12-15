@@ -1,5 +1,6 @@
 #!/bin/bash
-# functions for entrypoint.sh 
+#
+# functions for entrypoint.sh
 
 source ${LDAP_RUNTIME_DIR}/environments
 
@@ -200,11 +201,24 @@ EOF
 }
 
 function __switch_user() {
-  local _exec_cmd="$1"
-  shift 1
+# __switch_user ${_exec_user} ${_exec_cmd} ${_exec_option}
+
+  local _exec_user="$1"
+  local _exec_cmd="$2"
+  shift 2
   local _exec_option="$@"
 
-  runuser -m -s ${_exec_cmd} -- ldap ${_exec_option}
+  local _cmd_path
+  for _cmd_path in $(echo ${PATH} | sed -e 's/\:/\ /g')
+  do
+    if [ -f ${_cmd_path}/${_exec_cmd} ]; then
+      runuser -m -s ${_cmd_path}/${_exec_cmd} -- ${_exec_user} ${_exec_option}
+      local _status=$?
+      break
+    fi
+  done
+
+  return ${_status}
 }
 
 function __set_slapd_uri() {
@@ -244,7 +258,7 @@ function __join_ldif() {
 function __mkcert_selfsigned() {
   if [ "${GENERATE_SELFSIGNED_CACERT}" = "yes" ]; then
     if [ ! -s "${LDAP_NSSDB_KEY}" -a ! -s ${LDAP_NSSDB_CERT} -a ! -s ${LDAP_NSSDB_SECMOD} ]; then
-      __switch_user /usr/bin/test -O ${LDAP_CERTS_DIR} || \
+      __switch_user ldap test -O ${LDAP_CERTS_DIR} || \
         chown ldap ${LDAP_CERTS_DIR}
 
       umask 0026
@@ -253,20 +267,20 @@ function __mkcert_selfsigned() {
         > ${LDAP_NSSDB_NOISE}
       echo ${NSSDB_PASS} > ${LDAP_NSSDB_PASS}
 
-      __switch_user /usr/bin/test -G ${LDAP_NSSDB_NOISE} || \
+      __switch_user ldap test -G ${LDAP_NSSDB_NOISE} || \
         chgrp ldap ${LDAP_NSSDB_NOISE}
 
-      __switch_user /usr/bin/test -G ${LDAP_NSSDB_PASS} || \
+      __switch_user ldap test -G ${LDAP_NSSDB_PASS} || \
         chgrp ldap ${LDAP_NSSDB_PASS}
 
       # Create New Key Databases
-      __switch_user /usr/bin/certutil -N  \
+      __switch_user ldap certutil -N  \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"
 
      umask 0022
 
-      # Create New CA Certicicate
+      # Create New CA Certicicate (Self Signed)
       certutil -S -x             \
         -d "${LDAP_CERTS_DIR}"   \
         -f "${LDAP_NSSDB_PASS}"  \
@@ -344,16 +358,16 @@ function __slapd_deploy() {
 }
 
 function __slapd_install() {
-  __switch_user /usr/bin/test -O ${LDAP_CONFIG_DIR} || \
+  __switch_user ldap test -O ${LDAP_CONFIG_DIR} || \
     chown ldap ${LDAP_CONFIG_DIR}
 
-  __switch_user /usr/bin/test -O ${LDAP_DBDATA_DIR} || \
+  __switch_user ldap test -O ${LDAP_DBDATA_DIR} || \
     chown ldap ${LDAP_DBDATA_DIR}
 
   if [ ! -e ${LDAP_CONFIG_DIR}/.slapd_installed ]; then
-    __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
+    __switch_user ldap slapadd -v -F ${LDAP_CONFIG_DIR} \
       -n 0 -l ${LDAP_WORK_DIR}/config.ldif
-    __switch_user /usr/sbin/slapadd -v -F ${LDAP_CONFIG_DIR} \
+    __switch_user ldap slapadd -v -F ${LDAP_CONFIG_DIR} \
       -n 2 -l ${LDAP_WORK_DIR}/base.ldif
 
     touch ${LDAP_CONFIG_DIR}/.slapd_installed

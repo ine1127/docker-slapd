@@ -23,6 +23,12 @@ if [ ! -z $1 ]; then
     status )
       __slapd_status
     ;;
+    backup_config )
+      __slapd_backup config
+    ;;
+    backup_dbdata )
+      __slapd_backup dbdata
+    ;;
     * )
       exec $@
     ;;

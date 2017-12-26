@@ -327,6 +327,36 @@ function __mkcert_selfsigned() {
   fi
 }
 
+function __slapd_backup() {
+  if [ ! -z $1 ]; then
+    if [ ! -d ${LDAP_BACKUP_DIR} ]; then
+      mkdir ${LDAP_BACKUP_DIR}
+    fi
+
+    case $1 in
+      config )
+        slapcat -F ${LDAP_CONFIG_DIR} -n 0 \
+          -l ${LDAP_BACKUP_DIR}/slapd_config.ldif
+        slapcat -F ${LDAP_CONFIG_DIR} \
+          -l ${LDAP_BACKUP_DIR}/slapd_data.ldif
+      ;;
+      dbdata )
+        case ${LDAP_DATABASE} in
+         mdb )
+           mdb_dump -a -f ${LDAP_BACKUP_DIR}/slapd_dbdata ${LDAP_DBDATA_DIR}
+         ;;
+         * )
+           echo "${LDAP_DATABASE} is none" >&2
+         ;;
+        esac
+      ;;
+      * )
+        echo "Invalid argument $1" >&2
+      ;;
+    esac
+  fi
+}
+
 function __slapd_deploy() {
   __mkldif_global
   __mkldif_schema

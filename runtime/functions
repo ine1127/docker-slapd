@@ -76,7 +76,7 @@ EOF
 }
 
 function __mkldif_config() {
-  local LDAP_MANAGER_PASS_CRYPT=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+  local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
   cat << EOF > ${LDAP_WORK_DIR}/tmp_config.ldif
 dn: olcDatabase=config,cn=config
@@ -90,7 +90,7 @@ olcLastMod: TRUE
 olcMaxDerefDepth: 15
 olcReadOnly: FALSE
 olcRootDN: cn=config
-olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
+olcRootPW: ${_ldap_manager_pass_crypt}
 olcSyncUseSubentry: FALSE
 olcMonitoring: FALSE
 
@@ -117,7 +117,7 @@ EOF
 }
 
 function __mkldif_mdb() {
-  local LDAP_MANAGER_PASS_CRYPT=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+  local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
   cat << EOF > ${LDAP_WORK_DIR}/tmp_mdb.ldif
 dn: olcDatabase=mdb,cn=config
@@ -130,7 +130,7 @@ olcLastMod: TRUE
 olcMaxDerefDepth: 15
 olcMonitoring: TRUE
 olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
-olcRootPW: ${LDAP_MANAGER_PASS_CRYPT}
+olcRootPW: ${_ldap_manager_pass_crypt}
 olcSuffix: ${_LDAP_MANAGER_DOMAIN}
 olcSyncUseSubentry: FALSE
 olcDbCheckpoint: 1024 15

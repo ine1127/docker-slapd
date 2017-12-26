@@ -33,9 +33,9 @@ function __container_build() {
 
 function __container_run() {
   local _env_proxy=$( \
-    printenv |
-    grep -i "_proxy=" |
-    while read -r x
+    printenv \
+    | grep -i "_proxy=" \
+    | while read -r x
     do
       echo -n " -e $x"
     done \

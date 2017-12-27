@@ -131,7 +131,7 @@ olcMaxDerefDepth: 15
 olcMonitoring: TRUE
 olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
 olcRootPW: ${_ldap_manager_pass_crypt}
-olcSuffix: ${_LDAP_MANAGER_DOMAIN}
+olcSuffix: ${_LDAP_DOMAIN_DN}
 olcSyncUseSubentry: FALSE
 olcDbCheckpoint: 1024 15
 olcDbNoSync: FALSE

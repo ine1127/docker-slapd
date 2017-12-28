@@ -155,6 +155,54 @@ olcDbIndex: nisMapEntry pres,eq,sub
 EOF
 }
 
+function __mkldif_bdb() {
+  local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+
+  cat << EOF > ${LDAP_WORK_DIR}/tmp_bdb.ldif
+dn: olcDatabase=bdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcBdbConfig
+olcDatabase: bdb
+olcReadOnly: FALSE
+olcAddContentAcl: FALSE
+olcLastMod: TRUE
+olcMaxDerefDepth: 15
+olcMonitoring: TRUE
+olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
+olcRootPW: ${_ldap_manager_pass_crypt}
+olcSuffix: ${_LDAP_DOMAIN_DN}
+olcSyncUseSubentry: FALSE
+olcDbCacheSize: 1000
+olcDbCheckpoint: 1024 15
+olcDbDirectory: ${LDAP_DBDATA_DIR}
+olcDbMode: 0600
+olcDbSearchStack: 16
+olcDbChecksum: FALSE
+olcDbNoSync: FALSE
+olcDbDirtyRead: FALSE
+olcDbIDLcacheSize: 0
+olcDbShmKey: 0
+olcDbCacheFree: 1
+olcDbDNcacheSize: 0
+olcDbConfig: set_cachesize 0 1048576 0
+olcDbConfig: set_lg_bsize 2097152
+olcDbIndex: objectClass pres,eq
+olcDbIndex: cn pres,eq,sub
+olcDbIndex: uid pres,eq,sub
+olcDbIndex: uidNumber pres,eq
+olcDbIndex: gidNumber pres,eq
+olcDbIndex: mail pres,eq,sub
+olcDbIndex: ou pres,eq,sub
+olcDbIndex: sn pres,eq,sub
+olcDbIndex: givenName pres,eq,sub
+olcDbIndex: loginShell pres,eq
+olcDbIndex: memberUid pres,eq,sub
+olcDbIndex: nisMapName pres,eq,sub
+olcDbIndex: nisMapEntry pres,eq,sub
+
+EOF
+}
+
 function __mkldif_tls() {
   cat << EOF > ${LDAP_WORK_DIR}/tmp_tls.ldif
 olcTLSCACertificatePath: ${LDAP_CERTS_DIR}
@@ -327,6 +375,20 @@ function __mkcert_selfsigned() {
   fi
 }
 
+function __choose_database() {
+  case ${LDAP_DATABASE} in
+    mdb )
+      __mkldif_mdb
+    ;;
+    bdb )
+      __mkldif_bdb
+    ;;
+    * )
+      echo "${LDAP_DATABASE} is none" >&2
+    ;;
+  esac
+}
+
 function __slapd_backup() {
   if [ ! -z $1 ]; then
     if [ ! -d ${LDAP_BACKUP_DIR} ]; then
@@ -363,8 +425,9 @@ function __slapd_deploy() {
   __mkldif_frontend
   __mkldif_config
   __mkldif_monitor
-  __mkldif_mdb
   __mkldif_tls
+
+  __choose_database
 
   __set_slapd_uri
   __mkcert_selfsigned
@@ -374,7 +437,7 @@ function __slapd_deploy() {
       ${LDAP_WORK_DIR}/tmp_frontend.ldif \
       ${LDAP_WORK_DIR}/tmp_config.ldif   \
       ${LDAP_WORK_DIR}/tmp_monitor.ldif  \
-      ${LDAP_WORK_DIR}/tmp_mdb.ldif      \
+      ${LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif      \
     > ${LDAP_WORK_DIR}/config.ldif
 
   __mkldif_base_domain

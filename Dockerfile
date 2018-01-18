@@ -14,7 +14,7 @@ ENV LDAP_NSSDB_KEY="${LDAP_CERTS_DIR}/key3.db" \
     LDAP_NSSDB_NOISE="${LDAP_CERTS_DIR}/noise" \
     LDAP_NSSDB_PASS="${LDAP_CERTS_DIR}/password"
 
-COPY entrypoint.sh /sbin/entrypoint.sh
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
 
 RUN yum -y update && \
     yum -y install \
@@ -28,7 +28,7 @@ RUN yum -y update && \
            ${LDAP_CERTS_DIR} ${LDAP_DBDATA_DIR} && \
     mkdir  -m 0750 ${LDAP_CONFIG_DIR} && \
     chown  -R ldap:ldap ${LDAP_ROOT_DIR} && \
-    chmod  755 /sbin/entrypoint.sh
+    chmod  755 /usr/local/sbin/entrypoint.sh
 
 COPY runtime/ ${LDAP_RUNTIME_DIR}
 
@@ -38,5 +38,5 @@ WORKDIR ${LDAP_ROOT_DIR}
 
 VOLUME ["${LDAP_CERTS_DIR}", "${LDAP_DBDATA_DIR}", "${LDAP_CONFIG_DIR}"]
 
-ENTRYPOINT ["/sbin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 CMD ["start"]

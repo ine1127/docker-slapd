@@ -186,6 +186,8 @@ olcDbCacheFree: 1
 olcDbDNcacheSize: 0
 olcDbConfig: set_cachesize 0 1048576 0
 olcDbConfig: set_lg_bsize 2097152
+olcDbConfig: set_data_dir .
+olcDbConfig: set_lg_dir .
 olcDbIndex: objectClass pres,eq
 olcDbIndex: cn pres,eq,sub
 olcDbIndex: uid pres,eq,sub
@@ -405,7 +407,11 @@ function __slapd_backup() {
       dbdata )
         case ${LDAP_DATABASE} in
          mdb )
-           mdb_dump -a -f ${LDAP_BACKUP_DIR}/slapd_dbdata ${LDAP_DBDATA_DIR}
+           mdb_copy ${LDAP_DBDATA_DIR} ${LDAP_BACKUP_DIR}
+         ;;
+         bdb )
+           db_hotbackup -Dc -h ${LDAP_DBDATA_DIR} -b ${LDAP_BACKUP_DIR}
+           db_verify -h ${LDAP_DBDATA_DIR} $(ls ${LDAP_BACKUP_DIR}/*.bdb)
          ;;
          * )
            echo "${LDAP_DATABASE} is none" >&2

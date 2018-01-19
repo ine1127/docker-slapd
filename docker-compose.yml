@@ -1,10 +1,10 @@
 version: '2'
 
 services:
-  centos-ldap:
-    container_name: docker-ldap
+  docker-slapd:
+    container_name: docker-slapd
     restart: always
-    image: octbr.ine/docker-ldap:0.1
+    image: octbr.ine/docker-slapd:0.4.0
     environment: 
     - LDAP_DOMAIN=
     - LDAP_ORGNAME=
@@ -17,3 +17,20 @@ services:
     - LDAP_MANAGER_NAME=
     - LDAP_MANAGER_PASS=
     - LDAP_MANAGER_DOMAIN=
+
+    - LDAP_DATABASE=
+    - LDAP_BACKUP_DIR=
+
+    - SLAPD_DEBUG_LEVEL=
+    - SLAPD_LDAP=
+    - SLAPD_LDAPI=
+    - SLAPD_LDAPS=
+
+    - GENERATE_SELFSIGNED_CACERT=
+    - CA_PEM_FILE=
+    - SERVER_PEM_FILE=
+
+    - SSL_HOSTNAME=
+    - NSSDB_PASS=
+    - NSSDB_CACERT_NAME=
+    - NSSDB_CERT_NAME=

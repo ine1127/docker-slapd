@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ${LDAP_RUNTIME_DIR}/functions
+source ${CONST_LDAP_RUNTIME_DIR}/functions
 
 function __usage() {
   cat <<EOL

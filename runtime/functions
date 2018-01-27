@@ -308,13 +308,13 @@ function __join_ldif() {
 function __mkcert_selfsigned() {
   if [ "${GENERATE_SELFSIGNED_CACERT}" = "yes" ]; then
     if [ ! -z ${NSSDB_PREFIX} ]; then
-      readonly local _prefix="-P ${NSSDB_PREFIX}"
+      readonly local _dbfile_prefix="-P ${NSSDB_PREFIX}"
     fi
 
     if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" -a ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" -a ! -s ${CONST_LDAP_NSSDB_SECMOD} ]; then
       __switch_user ldap test -O ${CONST_LDAP_CERTS_DIR} || \
         chown ldap ${CONST_LDAP_CERTS_DIR}
-
+      local _default_umask=$(umask)
       umask 0026
 
       dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
@@ -331,9 +331,9 @@ function __mkcert_selfsigned() {
       __switch_user ldap certutil -N   \
         -d "${CONST_LDAP_CERTS_DIR}"   \
         -f "${CONST_LDAP_NSSDB_PASS}"  \
-        ${_prefix}
+        ${_dbfile_prefix}
 
-     umask 0022
+     umask ${_default_umask}
 
       # Create New CA Certicicate (Self Signed)
       certutil -S -x                   \
@@ -347,7 +347,7 @@ function __mkcert_selfsigned() {
         -Z "SHA512"              \
         -g "4096"                \
         -v "120"                 \
-        ${_prefix}
+        ${_dbfile_prefix}
 
       # Create New Certificate Signed CA
       certutil -S                      \
@@ -363,7 +363,7 @@ function __mkcert_selfsigned() {
         -g "4096"                \
         -v "120"                 \
         -8 "${SSL_HOSTNAME},localhost,localhost.localdomain" \
-        ${_prefix}
+        ${_dbfile_prefix}
     fi
 
     if [ ! -s ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE} ]; then
@@ -371,7 +371,7 @@ function __mkcert_selfsigned() {
         -d "${CONST_LDAP_CERTS_DIR}"   \
         -f "${CONST_LDAP_NSSDB_PASS}"  \
         -n "${NSSDB_CACERT_NAME}"      \
-        ${_prefix}                     \
+        ${_dbfile_prefix}              \
         -a > ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}
     fi
 
@@ -380,7 +380,7 @@ function __mkcert_selfsigned() {
         -d "${CONST_LDAP_CERTS_DIR}"   \
         -f "${CONST_LDAP_NSSDB_PASS}"  \
         -n "${NSSDB_CERT_NAME}"        \
-        ${_prefix}                     \
+        ${_dbfile_prefix}              \
         -a > ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
     fi
   fi

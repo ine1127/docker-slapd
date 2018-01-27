@@ -19,8 +19,7 @@ RUN yum -y update && \
            openldap-servers \
            epel-release && \
     yum -y install lmdb && \
-    rm -rf /var/lib/yum/* && \
-    rm -rf /var/cache/yum/* && \
+    yum clean all && \
     rm -rf /etc/openldap/slapd.d/* && \
     mkdir  ${CONST_LDAP_ROOT_DIR} ${CONST_LDAP_WORK_DIR} \
            ${CONST_LDAP_CERTS_DIR} ${CONST_LDAP_DBDATA_DIR} && \

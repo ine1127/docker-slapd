@@ -273,15 +273,15 @@ function __switch_user() {
 
 function __set_slapd_uri() {
   if [ "${SLAPD_LDAP}" = "yes" ]; then
-    _SLAPD_LDAP_ARGS="ldap:///"
+    _SLAPD_LDAP_URI="ldap:///"
   fi
 
   if [ "${SLAPD_LDAPI}" = "yes" ]; then
-    _SLAPD_LDAPI_ARGS="ldapi:///"
+    _SLAPD_LDAPI_URI="ldapi:///"
   fi
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    _SLAPD_LDAPS_ARGS="ldaps:///"
+    _SLAPD_LDAPS_URI="ldaps:///"
     __join_ldif ${CONST_LDAP_WORK_DIR}/tmp_global.ldif \
                 ${CONST_LDAP_WORK_DIR}/tmp_tls.ldif
   fi
@@ -503,7 +503,7 @@ function __slapd_start() {
 
   if [ "noproc" = "${_PID}" ]; then
     exec /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
-    -h "${_SLAPD_LDAP_ARGS} ${_SLAPD_LDAPI_ARGS} ${_SLAPD_LDAPS_ARGS}" \
+    -h "${_SLAPD_LDAP_URI} ${_SLAPD_LDAPI_URI} ${_SLAPD_LDAPS_URI}" \
     -F ${CONST_LDAP_CONFIG_DIR} \
     -u ldap
   fi

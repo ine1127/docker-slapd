@@ -26,7 +26,6 @@ services:
     - SLAPD_LDAPI=
     - SLAPD_LDAPS=
 
-    - GENERATE_SELFSIGNED_CACERT=
     - CA_PEM_FILE=
     - SERVER_PEM_FILE=
 

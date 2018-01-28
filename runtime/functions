@@ -306,35 +306,43 @@ function __join_ldif() {
 }
 
 function __mkcert_selfsigned() {
-  if [ "${GENERATE_SELFSIGNED_CACERT}" = "yes" ]; then
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
     if [ ! -z ${NSSDB_PREFIX} ]; then
       readonly local _dbfile_prefix="-P ${NSSDB_PREFIX}"
     fi
 
+    __switch_user ldap test -O ${CONST_LDAP_CERTS_DIR} || \
+      chown ldap ${CONST_LDAP_CERTS_DIR}
+    local _default_umask=$(umask)
+    umask 0026
+
+    # Create noise File
+    dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
+      > ${CONST_LDAP_NSSDB_NOISE}
+
+    # Create password File
+    echo ${NSSDB_PASS} > ${CONST_LDAP_NSSDB_PASS}
+
+    __switch_user ldap test -G ${CONST_LDAP_NSSDB_NOISE} || \
+      chgrp ldap ${CONST_LDAP_NSSDB_NOISE}
+
+    __switch_user ldap test -G ${CONST_LDAP_NSSDB_PASS} || \
+      chgrp ldap ${CONST_LDAP_NSSDB_PASS}
+
     if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" -a ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" -a ! -s ${CONST_LDAP_NSSDB_SECMOD} ]; then
-      __switch_user ldap test -O ${CONST_LDAP_CERTS_DIR} || \
-        chown ldap ${CONST_LDAP_CERTS_DIR}
-      local _default_umask=$(umask)
-      umask 0026
-
-      dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
-        > ${CONST_LDAP_NSSDB_NOISE}
-      echo ${NSSDB_PASS} > ${CONST_LDAP_NSSDB_PASS}
-
-      __switch_user ldap test -G ${CONST_LDAP_NSSDB_NOISE} || \
-        chgrp ldap ${CONST_LDAP_NSSDB_NOISE}
-
-      __switch_user ldap test -G ${CONST_LDAP_NSSDB_PASS} || \
-        chgrp ldap ${CONST_LDAP_NSSDB_PASS}
-
       # Create New Key Databases
       __switch_user ldap certutil -N   \
         -d "${CONST_LDAP_CERTS_DIR}"   \
         -f "${CONST_LDAP_NSSDB_PASS}"  \
         ${_dbfile_prefix}
+    fi
 
-     umask ${_default_umask}
+    umask ${_default_umask}
 
+    certutil -L -d ./certs/ -n "${NSSDB_CACERT_NAME}" > /dev/null 2>&1
+    local _cert_status=$?
+
+    if [ ${_cert_status} -ne 0 ]; then
       # Create New CA Certicicate (Self Signed)
       certutil -S -x                   \
         -d "${CONST_LDAP_CERTS_DIR}"   \
@@ -348,7 +356,12 @@ function __mkcert_selfsigned() {
         -g "4096"                \
         -v "120"                 \
         ${_dbfile_prefix}
+    fi
 
+    certutil -L -d ./certs/ -n "${NSSDB_CERT_NAME}" > /dev/null 2>&1
+    local _cert_status=$?
+
+    if  [ ${_cert_status} -ne 0 ]; then
       # Create New Certificate Signed CA
       certutil -S                      \
         -d "${CONST_LDAP_CERTS_DIR}"   \

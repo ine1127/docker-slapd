@@ -282,8 +282,6 @@ function __set_slapd_uri() {
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
     _SLAPD_LDAPS_URI="ldaps:///"
-    __join_ldif ${CONST_LDAP_WORK_DIR}/tmp_global.ldif \
-                ${CONST_LDAP_WORK_DIR}/tmp_tls.ldif
   fi
 }
 
@@ -306,96 +304,94 @@ function __join_ldif() {
 }
 
 function __mkcert_selfsigned() {
-  if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    if [ ! -z ${NSSDB_PREFIX} ]; then
-      readonly local _dbfile_prefix="-P ${NSSDB_PREFIX}"
-    fi
+  if [ ! -z ${NSSDB_PREFIX} ]; then
+    readonly local _dbfile_prefix="-P ${NSSDB_PREFIX}"
+  fi
 
-    __switch_user ldap test -O ${CONST_LDAP_CERTS_DIR} || \
-      chown ldap ${CONST_LDAP_CERTS_DIR}
-    local _default_umask=$(umask)
-    umask 0026
+  __switch_user ldap test -O ${CONST_LDAP_CERTS_DIR} || \
+    chown ldap ${CONST_LDAP_CERTS_DIR}
+  local _default_umask=$(umask)
+  umask 0026
 
-    # Create noise File
-    dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
-      > ${CONST_LDAP_NSSDB_NOISE}
+  # Create noise File
+  dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
+    > ${CONST_LDAP_NSSDB_NOISE}
 
-    # Create password File
-    echo ${NSSDB_PASS} > ${CONST_LDAP_NSSDB_PASS}
+  # Create password File
+  echo ${NSSDB_PASS} > ${CONST_LDAP_NSSDB_PASS}
 
-    __switch_user ldap test -G ${CONST_LDAP_NSSDB_NOISE} || \
-      chgrp ldap ${CONST_LDAP_NSSDB_NOISE}
+  __switch_user ldap test -G ${CONST_LDAP_NSSDB_NOISE} || \
+    chgrp ldap ${CONST_LDAP_NSSDB_NOISE}
 
-    __switch_user ldap test -G ${CONST_LDAP_NSSDB_PASS} || \
-      chgrp ldap ${CONST_LDAP_NSSDB_PASS}
+  __switch_user ldap test -G ${CONST_LDAP_NSSDB_PASS} || \
+    chgrp ldap ${CONST_LDAP_NSSDB_PASS}
 
-    if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" -a ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" -a ! -s ${CONST_LDAP_NSSDB_SECMOD} ]; then
-      # Create New Key Databases
-      __switch_user ldap certutil -N   \
-        -d "${CONST_LDAP_CERTS_DIR}"   \
-        -f "${CONST_LDAP_NSSDB_PASS}"  \
-        ${_dbfile_prefix}
-    fi
+  if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" -a ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" -a ! -s ${CONST_LDAP_NSSDB_SECMOD} ]; then
+    # Create New Key Databases
+    __switch_user ldap certutil -N   \
+      -d "${CONST_LDAP_CERTS_DIR}"   \
+      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      ${_dbfile_prefix}
+  fi
 
-    umask ${_default_umask}
+  umask ${_default_umask}
 
-    certutil -L -d ./certs/ -n "${NSSDB_CACERT_NAME}" > /dev/null 2>&1
-    local _cert_status=$?
+  certutil -L -d ./certs/ -n "${NSSDB_CACERT_NAME}" > /dev/null 2>&1
+  local _cert_status=$?
 
-    if [ ${_cert_status} -ne 0 ]; then
-      # Create New CA Certicicate (Self Signed)
-      certutil -S -x                   \
-        -d "${CONST_LDAP_CERTS_DIR}"   \
-        -f "${CONST_LDAP_NSSDB_PASS}"  \
-        -z "${CONST_LDAP_NSSDB_NOISE}" \
-        -n "${NSSDB_CACERT_NAME}"      \
-        -s "CN=CAcert"           \
-        -t "CT,,"                \
-        -k "rsa"                 \
-        -Z "SHA512"              \
-        -g "4096"                \
-        -v "120"                 \
-        ${_dbfile_prefix}
-    fi
+  if [ ${_cert_status} -ne 0 ]; then
+    # Create New CA Certicicate (Self Signed)
+    certutil -S -x                   \
+      -d "${CONST_LDAP_CERTS_DIR}"   \
+      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      -z "${CONST_LDAP_NSSDB_NOISE}" \
+      -n "${NSSDB_CACERT_NAME}"      \
+      -s "CN=CAcert"           \
+      -t "CT,,"                \
+      -k "rsa"                 \
+      -Z "SHA512"              \
+      -g "4096"                \
+      -v "120"                 \
+      ${_dbfile_prefix}
+  fi
 
-    certutil -L -d ./certs/ -n "${NSSDB_CERT_NAME}" > /dev/null 2>&1
-    local _cert_status=$?
+  certutil -L -d ./certs/ -n "${NSSDB_CERT_NAME}" > /dev/null 2>&1
+  local _cert_status=$?
 
-    if  [ ${_cert_status} -ne 0 ]; then
-      # Create New Certificate Signed CA
-      certutil -S                      \
-        -d "${CONST_LDAP_CERTS_DIR}"   \
-        -f "${CONST_LDAP_NSSDB_PASS}"  \
-        -z "${CONST_LDAP_NSSDB_NOISE}" \
-        -c "${NSSDB_CACERT_NAME}"      \
-        -n "${NSSDB_CERT_NAME}"  \
-        -s "CN=${SSL_HOSTNAME}"  \
-        -t "u,u,u"               \
-        -k "rsa"                 \
-        -Z "SHA512"              \
-        -g "4096"                \
-        -v "120"                 \
-        -8 "${SSL_HOSTNAME},localhost,localhost.localdomain" \
-        ${_dbfile_prefix}
-    fi
+  if  [ ${_cert_status} -ne 0 ]; then
+    # Create New Certificate Signed CA
+    certutil -S                      \
+      -d "${CONST_LDAP_CERTS_DIR}"   \
+      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      -z "${CONST_LDAP_NSSDB_NOISE}" \
+      -c "${NSSDB_CACERT_NAME}"      \
+      -n "${NSSDB_CERT_NAME}"  \
+      -s "CN=${SSL_HOSTNAME}"  \
+      -t "u,u,u"               \
+      -k "rsa"                 \
+      -Z "SHA512"              \
+      -g "4096"                \
+      -v "120"                 \
+      -8 "${SSL_HOSTNAME},localhost,localhost.localdomain" \
+      ${_dbfile_prefix}
+  fi
 
-    if [ ! -s ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE} ]; then
-      certutil -L                      \
-        -d "${CONST_LDAP_CERTS_DIR}"   \
-        -f "${CONST_LDAP_NSSDB_PASS}"  \
-        -n "${NSSDB_CACERT_NAME}"      \
-        ${_dbfile_prefix}              \
-        -a > ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}
-    fi
+  if [ ! -s ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE} ]; then
+    certutil -L                      \
+      -d "${CONST_LDAP_CERTS_DIR}"   \
+      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      -n "${NSSDB_CACERT_NAME}"      \
+      ${_dbfile_prefix}              \
+      -a > ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}
+  fi
 
-    if [ ! -s ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE} ]; then
-      certutil -L                      \
-        -d "${CONST_LDAP_CERTS_DIR}"   \
-        -f "${CONST_LDAP_NSSDB_PASS}"  \
-        -n "${NSSDB_CERT_NAME}"        \
-        ${_dbfile_prefix}              \
-        -a > ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
-    fi
+  if [ ! -s ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE} ]; then
+    certutil -L                      \
+      -d "${CONST_LDAP_CERTS_DIR}"   \
+      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      -n "${NSSDB_CERT_NAME}"        \
+      ${_dbfile_prefix}              \
+      -a > ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
   fi
 }
 
@@ -458,7 +454,13 @@ function __slapd_deploy() {
   __choose_database
 
   __set_slapd_uri
-  __mkcert_selfsigned
+
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
+    __join_ldif ${CONST_LDAP_WORK_DIR}/tmp_global.ldif \
+                ${CONST_LDAP_WORK_DIR}/tmp_tls.ldif
+
+    __mkcert_selfsigned
+  fi
 
   cat ${CONST_LDAP_WORK_DIR}/tmp_global.ldif   \
       ${CONST_LDAP_WORK_DIR}/tmp_schema.ldif   \

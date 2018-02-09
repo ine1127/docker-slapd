@@ -19,7 +19,6 @@ services:
     - LDAP_MANAGER_DOMAIN=
 
     - LDAP_DATABASE=
-    - LDAP_BACKUP_DIR=
 
     - SLAPD_DEBUG_LEVEL=
     - SLAPD_LDAP=

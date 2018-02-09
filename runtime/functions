@@ -411,25 +411,25 @@ function __choose_database() {
 
 function __slapd_backup() {
   if [ ! -z $1 ]; then
-    if [ ! -d ${LDAP_BACKUP_DIR} ]; then
-      mkdir ${LDAP_BACKUP_DIR}
+    if [ ! -d ${CONST_LDAP_BACKUP_DIR} ]; then
+      mkdir ${CONST_LDAP_BACKUP_DIR}
     fi
 
     case $1 in
       config )
         slapcat -F ${CONST_LDAP_CONFIG_DIR} -n 0 \
-          -l ${LDAP_BACKUP_DIR}/slapd_config.ldif
+          -l ${CONST_LDAP_BACKUP_DIR}/slapd_config.ldif
         slapcat -F ${CONST_LDAP_CONFIG_DIR} \
-          -l ${LDAP_BACKUP_DIR}/slapd_data.ldif
+          -l ${CONST_LDAP_BACKUP_DIR}/slapd_data.ldif
       ;;
       dbdata )
         case ${LDAP_DATABASE} in
          mdb )
-           mdb_copy ${CONST_LDAP_DBDATA_DIR} ${LDAP_BACKUP_DIR}
+           mdb_copy ${CONST_LDAP_DBDATA_DIR} ${CONST_LDAP_BACKUP_DIR}
          ;;
          bdb )
-           db_hotbackup -Dc -h ${CONST_LDAP_DBDATA_DIR} -b ${LDAP_BACKUP_DIR}
-           db_verify -h ${CONST_LDAP_DBDATA_DIR} $(ls ${LDAP_BACKUP_DIR}/*.bdb)
+           db_hotbackup -Dc -h ${CONST_LDAP_DBDATA_DIR} -b ${CONST_LDAP_BACKUP_DIR}
+           db_verify -h ${CONST_LDAP_DBDATA_DIR} $(ls ${CONST_LDAP_BACKUP_DIR}/*.bdb)
          ;;
          * )
            echo "${LDAP_DATABASE} is none" >&2

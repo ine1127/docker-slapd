@@ -10,244 +10,33 @@ function __slapd_load_domain() {
   _LDAP_MANAGER_DOMAIN=$(echo dc=${LDAP_MANAGER_DOMAIN} | sed -e 's/\./,dc=/g')
 }
 
-function __mkldif_global() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_global.ldif
-dn: cn=config
-objectClass: olcGlobal
-cn: config
-olcArgsFile: /var/run/openldap/slapd.args
-olcPidFile: /var/run/openldap/slapd.pid
-olcAllows: bind_v2
-olcAttributeOptions: lang-
-olcAuthzPolicy: none
-olcConcurrency: 0
-olcConnMaxPending: 100
-olcConnMaxPendingAuth: 1000
-olcGentleHUP: FALSE
-olcIdleTimeout: 0
-olcIndexSubstrIfMaxLen: 4
-olcIndexSubstrIfMinLen: 2
-olcIndexSubstrAnyLen: 4
-olcIndexSubstrAnyStep: 2
-olcIndexIntLen: 4
-olcListenerThreads: 1
-olcLocalSSF: 71
-olcLogLevel: 0
-olcReadOnly: FALSE
-olcReverseLookup: FALSE
-olcSaslSecProps: noplain,noanonymous
-olcSockbufMaxIncoming: 262143
-olcSockbufMaxIncomingAuth: 16777215
-
-EOF
-}
-
-function __mkldif_schema() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_schema.ldif
-dn: cn=schema,cn=config
-objectClass: olcSchemaConfig
-cn: schema
-
-include: file:///etc/openldap/schema/corba.ldif
-include: file:///etc/openldap/schema/core.ldif
-include: file:///etc/openldap/schema/cosine.ldif
-include: file:///etc/openldap/schema/inetorgperson.ldif
-include: file:///etc/openldap/schema/nis.ldif
-include: file:///etc/openldap/schema/openldap.ldif
-
-EOF
-}
-
-function __mkldif_frontend() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_frontend.ldif
-dn: olcDatabase=frontend,cn=config
-objectClass: olcDatabaseConfig
-objectClass: olcFrontendConfig
-olcDatabase: frontend
-olcAddContentAcl: FALSE
-olcLastMod: TRUE
-olcMaxDerefDepth: 0
-olcReadOnly: FALSE
-olcSchemaDN: cn=Subschema
-olcSyncUseSubentry: FALSE
-olcMonitoring: FALSE
-
-EOF
-}
-
-function __mkldif_config() {
+function __genldif_install() {
+  local _line
   local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
-dn: olcDatabase=config,cn=config
-objectClass: olcDatabaseConfig
-olcDatabase: config
-olcAccess: to *
-  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage
-  by * none
-olcAddContentAcl: TRUE
-olcLastMod: TRUE
-olcMaxDerefDepth: 15
-olcReadOnly: FALSE
-olcRootDN: cn=config
-olcRootPW: ${_ldap_manager_pass_crypt}
-olcSyncUseSubentry: FALSE
-olcMonitoring: FALSE
-
-EOF
+  cat ${CONST_LDAP_RUNTIME_DIR}/config/[0-8][0-9]*.ldif | while read _line; do
+    _line=$(echo "${_line}" | sed -e 's/\"/\\\"/g' -e 's/\*/\\\*/g' -e 's/by /\\  by /g')
+    eval echo "${_line}" >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
+  done
 }
 
-function __mkldif_monitor() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_monitor.ldif
-dn: olcDatabase=monitor,cn=config
-objectClass: olcDatabaseConfig
-olcDatabase: monitor
-olcAccess: to *
-  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" read
-  by dn.base="cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}" read
-  by * none
-olcAddContentAcl: FALSE
-olcLastMod: TRUE
-olcMaxDerefDepth: 15
-olcReadOnly: FALSE
-olcSyncUseSubentry: FALSE
-olcMonitoring: FALSE
-
-EOF
-}
-
-function __mkldif_mdb() {
+function __genldif_database() {
+  local _line
   local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_mdb.ldif
-dn: olcDatabase=mdb,cn=config
-objectClass: olcDatabaseConfig
-objectClass: olcMdbConfig
-olcDatabase: mdb
-olcReadOnly: FALSE
-olcAddContentAcl: FALSE
-olcLastMod: TRUE
-olcMaxDerefDepth: 15
-olcMonitoring: TRUE
-olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
-olcRootPW: ${_ldap_manager_pass_crypt}
-olcSuffix: ${_LDAP_DOMAIN_DN}
-olcSyncUseSubentry: FALSE
-olcDbCheckpoint: 1024 15
-olcDbNoSync: FALSE
-olcDbDirectory: ${CONST_LDAP_DBDATA_DIR}
-olcDbMode: 0600
-olcDbSearchStack: 16
-olcDbIndex: objectClass pres,eq
-olcDbIndex: cn pres,eq,sub
-olcDbIndex: uid pres,eq,sub
-olcDbIndex: uidNumber pres,eq
-olcDbIndex: gidNumber pres,eq
-olcDbIndex: mail pres,eq,sub
-olcDbIndex: ou pres,eq,sub
-olcDbIndex: sn pres,eq,sub
-olcDbIndex: givenName pres,eq,sub
-olcDbIndex: loginShell pres,eq
-olcDbIndex: memberUid pres,eq,sub
-olcDbIndex: nisMapName pres,eq,sub
-olcDbIndex: nisMapEntry pres,eq,sub
-
-EOF
+  cat ${CONST_LDAP_RUNTIME_DIR}/config/database/${_USE_DATABASE} | while read _line; do
+    _line=$(echo "${_line}" | sed -e 's/\"/\\\"/g' -e 's/\*/\\\*/g' -e 's/by /\\  by /g')
+    eval echo "${_line}" >> ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif
+  done
 }
 
-function __mkldif_bdb() {
-  local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+function __genldif_baseentry() {
+  local _line
 
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_bdb.ldif
-dn: olcDatabase=bdb,cn=config
-objectClass: olcDatabaseConfig
-objectClass: olcBdbConfig
-olcDatabase: bdb
-olcReadOnly: FALSE
-olcAddContentAcl: FALSE
-olcLastMod: TRUE
-olcMaxDerefDepth: 15
-olcMonitoring: TRUE
-olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
-olcRootPW: ${_ldap_manager_pass_crypt}
-olcSuffix: ${_LDAP_DOMAIN_DN}
-olcSyncUseSubentry: FALSE
-olcDbCacheSize: 1000
-olcDbCheckpoint: 1024 15
-olcDbDirectory: ${CONST_LDAP_DBDATA_DIR}
-olcDbMode: 0600
-olcDbSearchStack: 16
-olcDbChecksum: FALSE
-olcDbNoSync: FALSE
-olcDbDirtyRead: FALSE
-olcDbIDLcacheSize: 0
-olcDbShmKey: 0
-olcDbCacheFree: 1
-olcDbDNcacheSize: 0
-olcDbConfig: set_cachesize 0 1048576 0
-olcDbConfig: set_lg_bsize 2097152
-olcDbConfig: set_data_dir .
-olcDbConfig: set_lg_dir .
-olcDbIndex: objectClass pres,eq
-olcDbIndex: cn pres,eq,sub
-olcDbIndex: uid pres,eq,sub
-olcDbIndex: uidNumber pres,eq
-olcDbIndex: gidNumber pres,eq
-olcDbIndex: mail pres,eq,sub
-olcDbIndex: ou pres,eq,sub
-olcDbIndex: sn pres,eq,sub
-olcDbIndex: givenName pres,eq,sub
-olcDbIndex: loginShell pres,eq
-olcDbIndex: memberUid pres,eq,sub
-olcDbIndex: nisMapName pres,eq,sub
-olcDbIndex: nisMapEntry pres,eq,sub
-
-EOF
-}
-
-function __mkldif_tls() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_tls.ldif
-olcTLSCACertificatePath: ${CONST_LDAP_CERTS_DIR}
-olcTLSCACertificateFile: ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}
-olcTLSCertificateFile: "${NSSDB_CERT_NAME}"
-olcTLSCertificateKeyFile: ${CONST_LDAP_CERTS_DIR}/password
-olcTLSCRLCheck: none
-olcTLSVerifyClient: never
-olcTLSProtocolMin: 3.2
-
-EOF
-}
-
-function __mkldif_base_domain() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_base_domain.ldif
-dn: ${_LDAP_DOMAIN_DN}
-objectClass: dcObject
-objectClass: organization
-dc: ${_LDAP_DOMAIN_RDN}
-o: ${LDAP_ORGNAME}
-description: ${LDAP_ORGNAME_DESC}
-
-EOF
-}
-
-function __mkldif_unit_user() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_unit_user.ldif
-dn: ou=${LDAP_PEOPLE},${_LDAP_DOMAIN_DN}
-objectClass: organizationalUnit
-ou: ${LDAP_PEOPLE}
-description: ${LDAP_PEOPLE_DESC}
-
-EOF
-}
-
-function __mkldif_unit_group() {
-  cat << EOF > ${CONST_LDAP_WORK_DIR}/tmp_unit_group.ldif
-dn: ou=${LDAP_GROUP},${_LDAP_DOMAIN_DN}
-objectClass: organizationalUnit
-ou: ${LDAP_GROUP}
-description: ${LDAP_GROUP_DESC}
-
-EOF
+  cat ${CONST_LDAP_RUNTIME_DIR}/config/entry/*.ldif | while read _line; do
+    _line=$(echo "${_line}" | sed -e 's/\"/\\\"/g' -e 's/\*/\\\*/g' -e 's/by /\\  by /g')
+    eval echo "${_line}" >> ${CONST_LDAP_WORK_DIR}/entry.ldif
+  done
 }
 
 function __switch_user() {
@@ -259,8 +48,7 @@ function __switch_user() {
   local _exec_option="$@"
 
   local _cmd_path
-  for _cmd_path in $(echo ${PATH} | sed -e 's/\:/\ /g')
-  do
+  for _cmd_path in $(echo ${PATH} | sed -e 's/\:/\ /g'); do
     if [ -f ${_cmd_path}/${_exec_cmd} ]; then
       runuser -m -s ${_cmd_path}/${_exec_cmd} -- ${_exec_user} ${_exec_option}
       local _status=$?
@@ -300,7 +88,6 @@ function __join_ldif() {
   cat ${_src_ldif} ${_add_ldif} > ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif
 
   mv ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif ${_src_ldif}
-  rm ${_add_ldif}
 }
 
 function __mkcert_selfsigned() {
@@ -398,10 +185,10 @@ function __mkcert_selfsigned() {
 function __choose_database() {
   case ${LDAP_DATABASE} in
     mdb )
-      __mkldif_mdb
+      _USE_DATABASE="mdb.ldif"
     ;;
     bdb )
-      __mkldif_bdb
+      _USE_DATABASE="bdb.ldif"
     ;;
     * )
       echo "${LDAP_DATABASE} is none" >&2
@@ -444,40 +231,23 @@ function __slapd_backup() {
 }
 
 function __slapd_deploy() {
-  __mkldif_global
-  __mkldif_schema
-  __mkldif_frontend
-  __mkldif_config
-  __mkldif_monitor
-  __mkldif_tls
-
-  __choose_database
-
-  __set_slapd_uri
-
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    __join_ldif ${CONST_LDAP_WORK_DIR}/tmp_global.ldif \
-                ${CONST_LDAP_WORK_DIR}/tmp_tls.ldif
+    __join_ldif ${CONST_LDAP_RUNTIME_DIR}/config/10-global.ldif \
+                ${CONST_LDAP_RUNTIME_DIR}/config/99-tls.ldif
 
     __mkcert_selfsigned
   fi
 
-  cat ${CONST_LDAP_WORK_DIR}/tmp_global.ldif   \
-      ${CONST_LDAP_WORK_DIR}/tmp_schema.ldif   \
-      ${CONST_LDAP_WORK_DIR}/tmp_frontend.ldif \
-      ${CONST_LDAP_WORK_DIR}/tmp_config.ldif   \
-      ${CONST_LDAP_WORK_DIR}/tmp_monitor.ldif  \
-      ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif      \
+  __choose_database
+  __genldif_install
+  __genldif_database
+  __genldif_baseentry
+
+  __set_slapd_uri
+
+  cat ${CONST_LDAP_WORK_DIR}/tmp_config.ldif            \
+      ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif  \
     > ${CONST_LDAP_WORK_DIR}/config.ldif
-
-  __mkldif_base_domain
-  __mkldif_unit_user
-  __mkldif_unit_group
-
-  cat ${CONST_LDAP_WORK_DIR}/tmp_base_domain.ldif \
-      ${CONST_LDAP_WORK_DIR}/tmp_unit_user.ldif   \
-      ${CONST_LDAP_WORK_DIR}/tmp_unit_group.ldif  \
-    > ${CONST_LDAP_WORK_DIR}/base.ldif
 }
 
 function __slapd_install() {
@@ -491,7 +261,7 @@ function __slapd_install() {
     __switch_user ldap slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
       -n 0 -l ${CONST_LDAP_WORK_DIR}/config.ldif
     __switch_user ldap slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
-      -n 2 -l ${CONST_LDAP_WORK_DIR}/base.ldif
+      -n 2 -l ${CONST_LDAP_WORK_DIR}/entry.ldif
 
     touch ${CONST_LDAP_CONFIG_DIR}/.slapd_installed
   fi
@@ -502,8 +272,6 @@ function __slapd_cleanup() {
 }
 
 function __slapd_call_pid() {
-  _PID=
-
   _PID_FILE="/var/run/openldap/slapd.pid"
 
   if [ -s ${_PID_FILE} ]; then

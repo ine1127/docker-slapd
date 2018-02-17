@@ -1,0 +1,17 @@
+dn: ${_LDAP_DOMAIN_DN}
+objectClass: dcObject
+objectClass: organization
+dc: ${_LDAP_DOMAIN_RDN}
+o: ${LDAP_ORGNAME}
+description: ${LDAP_ORGNAME_DESC}
+
+dn: ou=${LDAP_PEOPLE},${_LDAP_DOMAIN_DN}
+objectClass: organizationalUnit
+ou: ${LDAP_PEOPLE}
+description: ${LDAP_PEOPLE_DESC}
+
+dn: ou=${LDAP_GROUP},${_LDAP_DOMAIN_DN}
+objectClass: organizationalUnit
+ou: ${LDAP_GROUP}
+description: ${LDAP_GROUP_DESC}
+

@@ -1,0 +1,43 @@
+dn: olcDatabase=bdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcBdbConfig
+olcDatabase: bdb
+olcReadOnly: FALSE
+olcAddContentAcl: FALSE
+olcLastMod: TRUE
+olcMaxDerefDepth: 15
+olcMonitoring: TRUE
+olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
+olcRootPW: ${_ldap_manager_pass_crypt}
+olcSuffix: ${_LDAP_DOMAIN_DN}
+olcSyncUseSubentry: FALSE
+olcDbCacheSize: 1000
+olcDbCheckpoint: 1024 15
+olcDbDirectory: ${CONST_LDAP_DBDATA_DIR}
+olcDbMode: 0600
+olcDbSearchStack: 16
+olcDbChecksum: FALSE
+olcDbNoSync: FALSE
+olcDbDirtyRead: FALSE
+olcDbIDLcacheSize: 0
+olcDbShmKey: 0
+olcDbCacheFree: 1
+olcDbDNcacheSize: 0
+olcDbConfig: set_cachesize 0 1048576 0
+olcDbConfig: set_lg_bsize 2097152
+olcDbConfig: set_data_dir .
+olcDbConfig: set_lg_dir .
+olcDbIndex: objectClass pres,eq
+olcDbIndex: cn pres,eq,sub
+olcDbIndex: uid pres,eq,sub
+olcDbIndex: uidNumber pres,eq
+olcDbIndex: gidNumber pres,eq
+olcDbIndex: mail pres,eq,sub
+olcDbIndex: ou pres,eq,sub
+olcDbIndex: sn pres,eq,sub
+olcDbIndex: givenName pres,eq,sub
+olcDbIndex: loginShell pres,eq
+olcDbIndex: memberUid pres,eq,sub
+olcDbIndex: nisMapName pres,eq,sub
+olcDbIndex: nisMapEntry pres,eq,sub
+

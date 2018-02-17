@@ -1,0 +1,8 @@
+olcTLSCACertificatePath: ${CONST_LDAP_CERTS_DIR}
+olcTLSCACertificateFile: ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}
+olcTLSCertificateFile: "${NSSDB_CERT_NAME}"
+olcTLSCertificateKeyFile: ${CONST_LDAP_CERTS_DIR}/password
+olcTLSCRLCheck: none
+olcTLSVerifyClient: never
+olcTLSProtocolMin: 3.2
+

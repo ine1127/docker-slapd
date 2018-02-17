@@ -1,0 +1,9 @@
+sudo: required
+
+language: bash
+
+services:
+- docker
+
+script:
+- docker build -t ine1127/docker-slapd:0.4.2 .

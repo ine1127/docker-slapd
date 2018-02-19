@@ -1,8 +1,8 @@
 dn: cn=config
 objectClass: olcGlobal
 cn: config
-olcArgsFile: /var/run/openldap/slapd.args
-olcPidFile: /var/run/openldap/slapd.pid
+olcArgsFile: ${CONST_LDAP_WORK_DIR}/slapd.args
+olcPidFile: ${CONST_LDAP_WORK_DIR}/slapd.pid
 olcAllows: bind_v2
 olcAttributeOptions: lang-
 olcAuthzPolicy: none

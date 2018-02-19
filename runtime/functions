@@ -10,13 +10,22 @@ function __slapd_load_domain() {
   _LDAP_MANAGER_DOMAIN=$(echo dc=${LDAP_MANAGER_DOMAIN} | sed -e 's/\./,dc=/g')
 }
 
+function __em_from_rm() {
+  echo "$1" \
+    | sed -e 's/\"/\\\"/g'     \
+          -e 's/\*/\\\*/g'     \
+          -e 's/by /\\  by /g'
+}
+
 function __genldif_install() {
-  local _line
+# _rmline = Raw meta character line
+# _emline = escape meta character line
+  local _rmline _emline
   local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
-  cat ${CONST_LDAP_RUNTIME_DIR}/config/[0-8][0-9]*.ldif | while read _line; do
-    _line=$(echo "${_line}" | sed -e 's/\"/\\\"/g' -e 's/\*/\\\*/g' -e 's/by /\\  by /g')
-    eval echo "${_line}" >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
+  cat ${CONST_LDAP_RUNTIME_DIR}/config/[0-8][0-9]*.ldif | while read _rmline; do
+    _emline=$(__em_from_rm "${_rmline}")
+    eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
   done
 }
 
@@ -24,9 +33,9 @@ function __genldif_database() {
   local _line
   local _ldap_manager_pass_crypt=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
-  cat ${CONST_LDAP_RUNTIME_DIR}/config/database/${_USE_DATABASE} | while read _line; do
-    _line=$(echo "${_line}" | sed -e 's/\"/\\\"/g' -e 's/\*/\\\*/g' -e 's/by /\\  by /g')
-    eval echo "${_line}" >> ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif
+  cat ${CONST_LDAP_RUNTIME_DIR}/config/database/${_USE_DATABASE} | while read _rmline; do
+    _emline=$(__em_from_rm "${_rmline}")
+    eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif
   done
 }
 

@@ -6,12 +6,37 @@ source ${CONST_LDAP_RUNTIME_DIR}/environments
 
 trap 'exit 1' 1 2 3 15
 
+##########################################################
+# Declare domain(DN, RDN)
+# Environments:
+#   LDAP_DOMAIN
+#   LDAP_MANAGER_DOMAIN
+# Globals:
+#   _LDAP_DOMAIN_DN
+#   _LDAP_DOMAIN_RDN
+#   _LDAP_MANAGER_DOMAIN
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_load_domain() {
   _LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')
   _LDAP_DOMAIN_RDN=$(echo ${LDAP_DOMAIN} | awk -F "." '{print $1}')
   _LDAP_MANAGER_DOMAIN=$(echo dc=${LDAP_MANAGER_DOMAIN} | sed -e 's/\./,dc=/g')
 }
 
+##########################################################
+# Add escape(\) before meta-character(",*,[space])
+# Environments:
+#   None
+# Globals:
+#   None
+# Arguments:
+#   Strings
+# Returns:
+#   Strings into processed meta-character
+##########################################################
 function __em_from_rm() {
   echo "$1" \
     | sed -e 's/\"/\\\"/g'     \
@@ -19,11 +44,24 @@ function __em_from_rm() {
           -e 's/by /\\  by /g'
 }
 
+##########################################################
+# Generate initialize LDIF file
+# Environments:
+#   CONST_LDAP_RUNTIME_DIR
+#   CONST_LDAP_WORK_DIR
+#   LDAP_MANAGER_PASS
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __genldif_install() {
 # _rmline = Raw meta character line
 # _emline = escape meta character line
-  local _rmline _emline
-  local _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+  local _rmline _emline _ldap_manager_crypt_pass
+  _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
   cat ${CONST_LDAP_RUNTIME_DIR}/config/[0-8][0-9]*.ldif | while read _rmline; do
     _emline=$(__em_from_rm "${_rmline}")
@@ -31,11 +69,25 @@ function __genldif_install() {
   done
 }
 
+##########################################################
+# Generate database LDIF file
+# Environments:
+#   CONST_LDAP_RUNTIME_DIR
+#   CONST_LDAP_WORK_DIR
+#   LDAP_DATABASE
+#   LDAP_MANAGER_PASS
+# Globals:
+#   _USE_DATABASE
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __genldif_database() {
 # _rmline = Raw meta character line
 # _emline = escape meta character line
-  local _rm_line _emline
-  local _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+  local _rm_line _emline _ldap_manager_crypt_pass
+  _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
   cat ${CONST_LDAP_RUNTIME_DIR}/config/database/${_USE_DATABASE} | while read _rmline; do
     _emline=$(__em_from_rm "${_rmline}")
@@ -43,6 +95,18 @@ function __genldif_database() {
   done
 }
 
+##########################################################
+# Generate base entry LDIF file
+# Environments:
+#   CONST_LDAP_RUNTIME_DIR
+#   CONST_LDAP_WORK_DIR
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __genldif_baseentry() {
 # _rmline = Raw meta character line
 # _emline = escape meta character line
@@ -54,6 +118,21 @@ function __genldif_baseentry() {
   done
 }
 
+##########################################################
+# Setting slapd URI
+# Environments:
+#   SLDAPD_LDAP
+#   SLDAPD_LDAPI
+#   SLDAPD_LDAPS
+# Globals:
+#   _SLAPD_LDAP_URI
+#   _SLAPD_LDAPI_URI
+#   _SLAPD_LDAPS_URI
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __set_slapd_uri() {
   if [ "${SLAPD_LDAP}" = "yes" ]; then
     _SLAPD_LDAP_URI="ldap://0.0.0.0:10389/"
@@ -68,6 +147,17 @@ function __set_slapd_uri() {
   fi
 }
 
+##########################################################
+# Join 2 LDIF files
+# Environments:
+#   CONST_LDAP_WORK_DIR
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __join_ldif() {
   local _src_ldif="$1"
   local _add_ldif="$2"
@@ -86,13 +176,37 @@ function __join_ldif() {
 }
 
 function __mkcert_selfsigned() {
+##########################################################
+# Generate Certificate
+# Environments:
+#   CA_PEM_FILE
+#   CONST_LDAP_CERTS_DIR
+#   CONST_LDAP_NSSDB_NOISE
+#   CONST_LDAP_NSSDB_PASS
+#   CONST_LDAP_NSSDB_SECMOD
+#   NSSDB_CACERT_NAME
+#   NSSDB_CERT_NAME
+#   NSSDB_NOISE
+#   NSSDB_PASS
+#   NSSDB_PREFIX
+#   SERVER_PEM_FILE
+#   SSL_HOSTNAME
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
   if [ ! -z ${NSSDB_PREFIX} ]; then
-    readonly local _dbfile_prefix="-P ${NSSDB_PREFIX}"
+    local _dbfile_prefix
+    readonly _dbfile_prefix="-P ${NSSDB_PREFIX}"
   fi
 
   test -O ${CONST_LDAP_CERTS_DIR} || \
     chown ldap ${CONST_LDAP_CERTS_DIR}
-  local _default_umask=$(umask)
+  local _default_umask
+  _default_umask=$(umask)
   umask 0026
 
   # Create noise File
@@ -177,6 +291,17 @@ function __mkcert_selfsigned() {
   fi
 }
 
+##########################################################
+# Choose using database from ${LDAP_DATABASE}
+# Environments:
+#   LDAP_DATABASE
+# Globals:
+#   _USE_DATABASE
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __choose_database() {
   case ${LDAP_DATABASE} in
     mdb )
@@ -191,6 +316,20 @@ function __choose_database() {
   esac
 }
 
+##########################################################
+# Backup slapd config and database
+# Environments:
+#   CONST_LDAP_BACKUP_DIR
+#   CONST_LDAP_CONFIG_DIR
+#   CONST_LDAP_DBDATA_DIR
+#   LDAP_DATABASE
+# Globals:
+#   None
+# Arguments:
+#   Backup target
+# Returns:
+#   None
+##########################################################
 function __slapd_backup() {
   if [ ! -z $1 ]; then
     if [ ! -d ${CONST_LDAP_BACKUP_DIR} ]; then
@@ -225,6 +364,20 @@ function __slapd_backup() {
   fi
 }
 
+##########################################################
+# Deploy LDIF file
+# Environments:
+#   CONST_LDAP_RUNTIME_DIR
+#   CONST_LDAP_WORK_DIR
+#   LDAP_DATABASE
+#   SLAPD_LDAPS
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_deploy() {
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
     __join_ldif ${CONST_LDAP_RUNTIME_DIR}/config/10-global.ldif \
@@ -245,6 +398,19 @@ function __slapd_deploy() {
     > ${CONST_LDAP_WORK_DIR}/config.ldif
 }
 
+##########################################################
+# Install LDIF file
+# Environments:
+#   CONST_LDAP_CONFIG_DIR
+#   CONST_LDAP_DBDATA_DIR
+#   CONST_LDAP_WORK_DIR
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_install() {
   test -O ${CONST_LDAP_CONFIG_DIR} || \
     chown ldap ${CONST_LDAP_CONFIG_DIR}
@@ -262,12 +428,35 @@ function __slapd_install() {
   fi
 }
 
+##########################################################
+# Remove temporary files
+# Environments:
+#   CONST_LDAP_WORK_DIR
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_cleanup() {
   rm -rf ${CONST_LDAP_WORK_DIR}/tmp_*
 }
 
+##########################################################
+# PID check slapd
+# Environments:
+#   CONST_LDAP_WORK_DIR
+# Globals:
+#   _PID
+#   _PID_FILE
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_call_pid() {
-  _PID_FILE="/var/run/openldap/slapd.pid"
+  _PID_FILE="${CONST_LDAP_WORK_DIR}/slapd.pid"
 
   if [ -s ${_PID_FILE} ]; then
     _PID=$(cat ${_PID_FILE})
@@ -276,17 +465,44 @@ function __slapd_call_pid() {
   _PID=${_PID:-noproc}
 }
 
+##########################################################
+# Start slapd
+# Environments:
+#   CONST_LDAP_CONFIG_DIR
+#   SLAPD_DEBUG_LEVEL
+# Globals:
+#   _PID
+#   _SLAPD_LDAP_URI
+#   _SLAPD_LDAPI_URI
+#   _SLAPD_LDAPS_URI
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_start() {
   __slapd_call_pid
 
   if [ "noproc" = "${_PID}" ]; then
     exec /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
-    -h "${_SLAPD_LDAP_URI} ${_SLAPD_LDAPI_URI} ${_SLAPD_LDAPS_URI}" \
-    -F ${CONST_LDAP_CONFIG_DIR} \
-    -u ldap
+      -h "${_SLAPD_LDAP_URI} ${_SLAPD_LDAPI_URI} ${_SLAPD_LDAPS_URI}" \
+      -F ${CONST_LDAP_CONFIG_DIR} \
+      -u ldap
   fi
 }
 
+##########################################################
+# Stop slapd
+# Environments:
+#   None
+# Globals:
+#   _PID
+#   _PID_FILE
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_stop() {
   __slapd_call_pid
 
@@ -296,6 +512,17 @@ function __slapd_stop() {
   fi
 }
 
+##########################################################
+# Current status check slapd
+# Environments:
+#   None
+# Globals:
+#   _PID
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __slapd_status() {
   __slapd_call_pid
 

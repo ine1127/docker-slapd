@@ -4,6 +4,8 @@
 
 source ${CONST_LDAP_RUNTIME_DIR}/environments
 
+trap 'exit 1' 1 2 3 15
+
 function __slapd_load_domain() {
   _LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')
   _LDAP_DOMAIN_RDN=$(echo ${LDAP_DOMAIN} | awk -F "." '{print $1}')

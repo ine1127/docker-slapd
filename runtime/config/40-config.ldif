@@ -9,7 +9,7 @@ olcLastMod: TRUE
 olcMaxDerefDepth: 15
 olcReadOnly: FALSE
 olcRootDN: cn=config
-olcRootPW: ${_ldap_manager_pass_crypt}
+olcRootPW: ${_ldap_manager_crypt_pass}
 olcSyncUseSubentry: FALSE
 olcMonitoring: FALSE
 

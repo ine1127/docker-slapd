@@ -175,7 +175,6 @@ function __join_ldif() {
   mv ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif ${_src_ldif}
 }
 
-function __mkcert_selfsigned() {
 ##########################################################
 # Generate Certificate
 # Environments:
@@ -198,6 +197,7 @@ function __mkcert_selfsigned() {
 # Returns:
 #   None
 ##########################################################
+function __gencert_selfsigned() {
   if [ ! -z ${NSSDB_PREFIX} ]; then
     local _dbfile_prefix
     readonly _dbfile_prefix="-P ${NSSDB_PREFIX}"
@@ -383,7 +383,7 @@ function __slapd_deploy() {
     __join_ldif ${CONST_LDAP_RUNTIME_DIR}/config/10-global.ldif \
                 ${CONST_LDAP_RUNTIME_DIR}/config/99-tls.ldif
 
-    __mkcert_selfsigned
+    __gencert_selfsigned
   fi
 
   __choose_database

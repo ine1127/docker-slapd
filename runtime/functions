@@ -48,37 +48,17 @@ function __genldif_baseentry() {
   done
 }
 
-function __switch_user() {
-# __switch_user ${_exec_user} ${_exec_cmd} ${_exec_option}
-
-  local _exec_user="$1"
-  local _exec_cmd="$2"
-  shift 2
-  local _exec_option="$@"
-
-  local _cmd_path
-  for _cmd_path in $(echo ${PATH} | sed -e 's/\:/\ /g'); do
-    if [ -f ${_cmd_path}/${_exec_cmd} ]; then
-      runuser -m -s ${_cmd_path}/${_exec_cmd} -- ${_exec_user} ${_exec_option}
-      local _status=$?
-      break
-    fi
-  done
-
-  return ${_status}
-}
-
 function __set_slapd_uri() {
   if [ "${SLAPD_LDAP}" = "yes" ]; then
-    _SLAPD_LDAP_URI="ldap:///"
+    _SLAPD_LDAP_URI="ldap://0.0.0.0:10389/"
   fi
 
   if [ "${SLAPD_LDAPI}" = "yes" ]; then
-    _SLAPD_LDAPI_URI="ldapi:///"
+    _SLAPD_LDAPI_URI="ldapi://0.0.0.0:10389/"
   fi
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    _SLAPD_LDAPS_URI="ldaps:///"
+    _SLAPD_LDAPS_URI="ldaps://0.0.0.0:10636/"
   fi
 }
 
@@ -104,7 +84,7 @@ function __mkcert_selfsigned() {
     readonly local _dbfile_prefix="-P ${NSSDB_PREFIX}"
   fi
 
-  __switch_user ldap test -O ${CONST_LDAP_CERTS_DIR} || \
+  test -O ${CONST_LDAP_CERTS_DIR} || \
     chown ldap ${CONST_LDAP_CERTS_DIR}
   local _default_umask=$(umask)
   umask 0026
@@ -116,15 +96,15 @@ function __mkcert_selfsigned() {
   # Create password File
   echo ${NSSDB_PASS} > ${CONST_LDAP_NSSDB_PASS}
 
-  __switch_user ldap test -G ${CONST_LDAP_NSSDB_NOISE} || \
+  test -G ${CONST_LDAP_NSSDB_NOISE} || \
     chgrp ldap ${CONST_LDAP_NSSDB_NOISE}
 
-  __switch_user ldap test -G ${CONST_LDAP_NSSDB_PASS} || \
+  test -G ${CONST_LDAP_NSSDB_PASS} || \
     chgrp ldap ${CONST_LDAP_NSSDB_PASS}
 
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" -a ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" -a ! -s ${CONST_LDAP_NSSDB_SECMOD} ]; then
     # Create New Key Databases
-    __switch_user ldap certutil -N   \
+    certutil -N   \
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       ${_dbfile_prefix}
@@ -260,16 +240,16 @@ function __slapd_deploy() {
 }
 
 function __slapd_install() {
-  __switch_user ldap test -O ${CONST_LDAP_CONFIG_DIR} || \
+  test -O ${CONST_LDAP_CONFIG_DIR} || \
     chown ldap ${CONST_LDAP_CONFIG_DIR}
 
-  __switch_user ldap test -O ${CONST_LDAP_DBDATA_DIR} || \
+  test -O ${CONST_LDAP_DBDATA_DIR} || \
     chown ldap ${CONST_LDAP_DBDATA_DIR}
 
   if [ ! -e ${CONST_LDAP_CONFIG_DIR}/.slapd_installed ]; then
-    __switch_user ldap slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
+    slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
       -n 0 -l ${CONST_LDAP_WORK_DIR}/config.ldif
-    __switch_user ldap slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
+    slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
       -n 2 -l ${CONST_LDAP_WORK_DIR}/entry.ldif
 
     touch ${CONST_LDAP_CONFIG_DIR}/.slapd_installed

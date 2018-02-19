@@ -1,7 +1,9 @@
 FROM centos:6.9
 LABEL maintainer "ine1127"
 
-ENV CONST_LDAP_ROOT_DIR="/home/ldap"
+ENV CONST_LDAP_ROOT_DIR="/home/ldap" \
+    CONST_LDAP_USER="ldap" \
+    CONST_LDAP_GROUP="ldap"
 ENV CONST_LDAP_DATA_DIR="${CONST_LDAP_ROOT_DIR}/openldap"
 ENV CONST_LDAP_RUNTIME_DIR="${CONST_LDAP_ROOT_DIR}/runtime" \
     CONST_LDAP_WORK_DIR="${CONST_LDAP_ROOT_DIR}/work" \
@@ -16,7 +18,9 @@ ENV CONST_LDAP_NSSDB_SECMOD="${CONST_LDAP_CERTS_DIR}/secmod.db" \
 
 COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
 
-RUN yum -y update && \
+RUN groupadd -g 55 ${CONST_LDAP_GROUP} && \
+    useradd -g ${CONST_LDAP_GROUP} -u 55 -d ${CONST_LDAP_ROOT_DIR} -s /bin/bash -c "LDAP User" ${CONST_LDAP_USER} && \
+    yum -y update && \
     yum -y install \
            openldap-clients \
            openldap-servers \
@@ -24,7 +28,7 @@ RUN yum -y update && \
     yum -y install lmdb && \
     yum clean all && \
     rm -rf /etc/openldap/slapd.d/* && \
-    mkdir  ${CONST_LDAP_ROOT_DIR} ${CONST_LDAP_WORK_DIR} \
+    mkdir  ${CONST_LDAP_WORK_DIR} \
            ${CONST_LDAP_DATA_DIR} ${CONST_LDAP_CERTS_DIR} \
            ${CONST_LDAP_DBDATA_DIR} ${CONST_LDAP_BACKUP_DIR} && \
     mkdir  -m 0750 ${CONST_LDAP_CONFIG_DIR} && \
@@ -33,7 +37,11 @@ RUN yum -y update && \
 
 COPY runtime/ ${CONST_LDAP_RUNTIME_DIR}
 
-EXPOSE 389/tcp 636/tcp
+RUN chown -R ${CONST_LDAP_USER}:${CONST_LDAP_GROUP} ${CONST_LDAP_RUNTIME_DIR}
+
+EXPOSE 10389/tcp 10636/tcp
+
+USER ${CONST_LDAP_USER}
 
 WORKDIR ${CONST_LDAP_ROOT_DIR}
 

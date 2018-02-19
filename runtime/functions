@@ -60,7 +60,7 @@ function __set_slapd_uri() {
   fi
 
   if [ "${SLAPD_LDAPI}" = "yes" ]; then
-    _SLAPD_LDAPI_URI="ldapi://0.0.0.0:10389/"
+    _SLAPD_LDAPI_URI="ldapi://%2Fvar%2Frun%2Fopenldap%2Fldapi/"
   fi
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then

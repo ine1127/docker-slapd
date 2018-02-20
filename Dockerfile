@@ -1,12 +1,14 @@
 FROM centos:6.9
 LABEL maintainer "ine1127"
 
-ENV CONST_LDAP_ROOT_DIR="/home/ldap" \
+ENV CONST_LDAP_HOME_DIR="/home/ldap" \
     CONST_LDAP_USER="ldap" \
-    CONST_LDAP_GROUP="ldap"
-ENV CONST_LDAP_DATA_DIR="${CONST_LDAP_ROOT_DIR}/openldap"
-ENV CONST_LDAP_RUNTIME_DIR="${CONST_LDAP_ROOT_DIR}/runtime" \
-    CONST_LDAP_WORK_DIR="${CONST_LDAP_ROOT_DIR}/work" \
+    CONST_LDAP_GROUP="ldap" \
+    CONST_LDAP_UID="55" \
+    CONST_LDAP_GID="55"
+ENV CONST_LDAP_DATA_DIR="${CONST_LDAP_HOME_DIR}/openldap"
+ENV CONST_LDAP_RUNTIME_DIR="${CONST_LDAP_HOME_DIR}/runtime" \
+    CONST_LDAP_WORK_DIR="${CONST_LDAP_HOME_DIR}/work" \
     CONST_LDAP_CERTS_DIR="${CONST_LDAP_DATA_DIR}/certs" \
     CONST_LDAP_DBDATA_DIR="${CONST_LDAP_DATA_DIR}/dbdata" \
     CONST_LDAP_CONFIG_DIR="${CONST_LDAP_DATA_DIR}/slapd.d" \
@@ -18,8 +20,12 @@ ENV CONST_LDAP_NSSDB_SECMOD="${CONST_LDAP_CERTS_DIR}/secmod.db" \
 
 COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
 
-RUN groupadd -g 55 ${CONST_LDAP_GROUP} && \
-    useradd -g ${CONST_LDAP_GROUP} -u 55 -d ${CONST_LDAP_ROOT_DIR} -s /bin/bash -c "LDAP User" ${CONST_LDAP_USER} && \
+RUN groupadd -g ${CONST_LDAP_GID} ${CONST_LDAP_GROUP} && \
+    useradd -g ${CONST_LDAP_GROUP} \
+            -u ${CONST_LDAP_UID} \
+            -d ${CONST_LDAP_HOME_DIR} \
+            -s /bin/bash -c "LDAP User" \
+            ${CONST_LDAP_USER} && \
     yum -y update && \
     yum -y install \
            openldap-clients \
@@ -28,11 +34,11 @@ RUN groupadd -g 55 ${CONST_LDAP_GROUP} && \
     yum -y install lmdb && \
     yum clean all && \
     rm -rf /etc/openldap/slapd.d/* && \
-    mkdir  ${CONST_LDAP_WORK_DIR} \
-           ${CONST_LDAP_DATA_DIR} ${CONST_LDAP_CERTS_DIR} \
-           ${CONST_LDAP_DBDATA_DIR} ${CONST_LDAP_BACKUP_DIR} && \
+    mkdir  ${CONST_LDAP_WORK_DIR} ${CONST_LDAP_DATA_DIR} \
+           ${CONST_LDAP_CERTS_DIR} ${CONST_LDAP_DBDATA_DIR} \
+           ${CONST_LDAP_BACKUP_DIR} && \
     mkdir  -m 0750 ${CONST_LDAP_CONFIG_DIR} && \
-    chown  -R ldap:ldap ${CONST_LDAP_ROOT_DIR} && \
+    chown  -R ldap:ldap ${CONST_LDAP_HOME_DIR} && \
     chmod  755 /usr/local/sbin/entrypoint.sh
 
 COPY runtime/ ${CONST_LDAP_RUNTIME_DIR}
@@ -43,7 +49,7 @@ EXPOSE 10389/tcp 10636/tcp
 
 USER ${CONST_LDAP_USER}
 
-WORKDIR ${CONST_LDAP_ROOT_DIR}
+WORKDIR ${CONST_LDAP_HOME_DIR}
 
 VOLUME ["${CONST_LDAP_DATA_DIR}"]
 

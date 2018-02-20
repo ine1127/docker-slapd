@@ -45,6 +45,22 @@ function __em_from_rm() {
 }
 
 ##########################################################
+# Mod Unicode from ASCII (only "/")
+# Environments:
+#   None
+# Globals:
+#   None
+# Arguments:
+#   Unicode Strings
+# Returns:
+#   AACII Strings
+##########################################################
+function __ac_from_uc {
+  echo "$1" \
+    | sed -e 's@/@%2F@g'
+}
+
+##########################################################
 # Generate initialize LDIF file
 # Environments:
 #   CONST_LDAP_RUNTIME_DIR
@@ -139,9 +155,12 @@ function __set_slapd_uri() {
   fi
 
   if [ "${SLAPD_LDAPI}" = "yes" ]; then
-    local _encode_uri
-    _encode_uri=$(echo ${CONST_LDAP_DATA_DIR}/ldapi | sed -e 's@/@%2F@g')
-    _SLAPD_LDAPI_URI="ldapi://${_encode_uri}/"
+    # _acpath = ASCII PATH
+    # _ucpath = Unicode PATH
+    local _acpath _ucpath
+    _ucpath="${CONST_LDAP_DATA_DIR}/ldapi"
+    _acpath=$(__ac_from_uc "${_ucpath}")
+    _SLAPD_LDAPI_URI="ldapi://${_acpath}/"
   fi
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then

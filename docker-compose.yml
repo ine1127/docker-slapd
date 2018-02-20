@@ -29,6 +29,6 @@ services:
     - SERVER_PEM_FILE=
 
     - SSL_HOSTNAME=
-    - NSSDB_PASS=
+    - NSSDB_PASSWORD=
     - NSSDB_CACERT_NAME=
     - NSSDB_CERT_NAME=

@@ -185,8 +185,7 @@ function __join_ldif() {
 #   CONST_LDAP_NSSDB_SECMOD
 #   NSSDB_CACERT_NAME
 #   NSSDB_CERT_NAME
-#   NSSDB_NOISE
-#   NSSDB_PASS
+#   NSSDB_PASSWORD
 #   NSSDB_PREFIX
 #   SERVER_PEM_FILE
 #   SSL_HOSTNAME
@@ -214,7 +213,7 @@ function __gencert_selfsigned() {
     > ${CONST_LDAP_NSSDB_NOISE}
 
   # Create password File
-  echo ${NSSDB_PASS} > ${CONST_LDAP_NSSDB_PASS}
+  echo ${NSSDB_PASSWORD} > ${CONST_LDAP_NSSDB_PASS}
 
   test -G ${CONST_LDAP_NSSDB_NOISE} || \
     chgrp ldap ${CONST_LDAP_NSSDB_NOISE}

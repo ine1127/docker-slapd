@@ -2,12 +2,25 @@
 
 source ${CONST_LDAP_RUNTIME_DIR}/functions
 
+##########################################################
+# Output script usage
+# Environments:
+#   None
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
 function __usage() {
+  local _script_name
+  _script_name=$0
   cat <<EOL
-$(basename ${0}) is a script for starting slapd service in Docker container
+${_script_name} is a script for starting slapd service on Docker container
 
 Usage:
-    $(basename ${0}) [[command] [arguments]]
+    ${_script_name} [[command] [arguments]]
 
 Command:
     init            initialize settings
@@ -20,7 +33,7 @@ Command:
                     required [arguments]
 
     ex)
-        $ $(basename ${0}) exec ls -la
+        $ ${_script_name} exec ls -la
 EOL
 }
 

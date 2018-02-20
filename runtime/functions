@@ -139,7 +139,9 @@ function __set_slapd_uri() {
   fi
 
   if [ "${SLAPD_LDAPI}" = "yes" ]; then
-    _SLAPD_LDAPI_URI="ldapi://%2Fvar%2Frun%2Fopenldap%2Fldapi/"
+    local _encode_uri
+    _encode_uri=$(echo ${CONST_LDAP_DATA_DIR}/ldapi | sed -e 's@/@%2F@g')
+    _SLAPD_LDAPI_URI="ldapi://${_encode_uri}/"
   fi
 
   if [ "${SLAPD_LDAPS}" = "yes" ]; then

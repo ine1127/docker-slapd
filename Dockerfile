@@ -9,10 +9,10 @@ ENV CONST_LDAP_HOME_DIR="/home/ldap" \
 ENV CONST_LDAP_DATA_DIR="${CONST_LDAP_HOME_DIR}/openldap"
 ENV CONST_LDAP_RUNTIME_DIR="${CONST_LDAP_HOME_DIR}/runtime" \
     CONST_LDAP_WORK_DIR="${CONST_LDAP_HOME_DIR}/work" \
+    CONST_LDAP_BACKUP_DIR="${CONST_LDAP_DATA_DIR}/backup" \
     CONST_LDAP_CERTS_DIR="${CONST_LDAP_DATA_DIR}/certs" \
-    CONST_LDAP_DBDATA_DIR="${CONST_LDAP_DATA_DIR}/dbdata" \
     CONST_LDAP_CONFIG_DIR="${CONST_LDAP_DATA_DIR}/slapd.d" \
-    CONST_LDAP_BACKUP_DIR="${CONST_LDAP_DATA_DIR}/backup"
+    CONST_LDAP_DBDATA_DIR="${CONST_LDAP_DATA_DIR}/dbdata"
 
 ENV CONST_LDAP_NSSDB_SECMOD="${CONST_LDAP_CERTS_DIR}/secmod.db" \
     CONST_LDAP_NSSDB_NOISE="${CONST_LDAP_CERTS_DIR}/noise" \
@@ -34,12 +34,9 @@ RUN groupadd -g ${CONST_LDAP_GID} ${CONST_LDAP_GROUP} && \
     yum -y install lmdb && \
     yum clean all && \
     rm -rf /etc/openldap/slapd.d/* && \
-    mkdir  ${CONST_LDAP_WORK_DIR} ${CONST_LDAP_DATA_DIR} \
-           ${CONST_LDAP_CERTS_DIR} ${CONST_LDAP_DBDATA_DIR} \
-           ${CONST_LDAP_BACKUP_DIR} && \
-    mkdir  -m 0750 ${CONST_LDAP_CONFIG_DIR} && \
-    chown  -R ldap:ldap ${CONST_LDAP_HOME_DIR} && \
-    chmod  755 /usr/local/sbin/entrypoint.sh
+    runuser -m -s /bin/mkdir -- ldap \
+      ${CONST_LDAP_WORK_DIR} ${CONST_LDAP_DATA_DIR} && \
+    chmod 755 /usr/local/sbin/entrypoint.sh
 
 COPY runtime/ ${CONST_LDAP_RUNTIME_DIR}
 

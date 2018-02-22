@@ -348,7 +348,7 @@ function __slapd_backup() {
       config )
         slapcat -F ${CONST_LDAP_CONFIG_DIR} -n 0 \
           -l ${CONST_LDAP_BACKUP_DIR}/slapd_config.ldif
-        slapcat -F ${CONST_LDAP_CONFIG_DIR} \
+        slapcat -F ${CONST_LDAP_CONFIG_DIR} -n 2 \
           -l ${CONST_LDAP_BACKUP_DIR}/slapd_data.ldif
       ;;
       dbdata )

@@ -230,7 +230,9 @@ function __gencert_selfsigned() {
   # Create password File
   echo ${NSSDB_PASSWORD} > ${CONST_LDAP_NSSDB_PASS}
 
-  if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" -a ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" -a ! -s ${CONST_LDAP_NSSDB_SECMOD} ]; then
+  if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" ] && \
+     [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" ] && \
+     [ ! -s "${CONST_LDAP_NSSDB_SECMOD}" ]; then
     # Create New Key Databases
     certutil -N   \
       -d "${CONST_LDAP_CERTS_DIR}"   \
@@ -385,10 +387,10 @@ function __slapd_backup() {
 #   None
 ##########################################################
 function __slapd_deploy() {
-  if [ ! -d ${CONST_LDAP_BACKUP_DIR} ] && \
-     [ ! -d ${CONST_LDAP_CERTS_DIR} ] && \
-     [ ! -d ${CONST_LDAP_CONFIG_DIR} ] && \
-     [ ! -d ${CONST_LDAP_DBDATA_DIR} ]; then
+  if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ] && \
+     [ ! -d "${CONST_LDAP_CERTS_DIR}" ] && \
+     [ ! -d "${CONST_LDAP_CONFIG_DIR}" ] && \
+     [ ! -d "${CONST_LDAP_DBDATA_DIR}" ]; then
     mkdir ${CONST_LDAP_BACKUP_DIR} ${CONST_LDAP_CERTS_DIR} \
           ${CONST_LDAP_CONFIG_DIR} ${CONST_LDAP_DBDATA_DIR}
   fi

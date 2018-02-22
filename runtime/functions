@@ -271,7 +271,7 @@ function __gencert_selfsigned() {
       -c "${NSSDB_CACERT_NAME}"      \
       -n "${NSSDB_CERT_NAME}"  \
       -s "CN=${SSL_HOSTNAME}"  \
-      -t "u,u,u"               \
+      -t ",,"                  \
       -k "rsa"                 \
       -Z "SHA512"              \
       -g "4096"                \

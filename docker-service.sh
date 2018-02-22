@@ -17,7 +17,7 @@ function __load_global_variables() {
 }
 
 function __container_build() {
-  __echo_exec docker build \
+  __echo_exec docker image build \
     --tag="${_IMAGE_NAME}" \
     --build-arg http_proxy="${http_proxy}" \
     --build-arg HTTP_PROXY="${HTTP_PROXY}" \
@@ -112,6 +112,12 @@ if [ $# -ge 1 ]; then
       shift 1
       _ADD_DOCKER_OPTS=($@)
       __container_build  
+    ;;
+    rebuild )
+      __image_remove
+      shift 1
+      _ADD_DOCKER_OPTS=($@)
+      __container_build
     ;;
     start )
       __container_start

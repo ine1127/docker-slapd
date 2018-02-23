@@ -1,0 +1,70 @@
+schemaVersion: "2.0.0"
+commandTests:
+- name: "package exist check"
+  command: "rpm"
+  args: ["-q", "openldap-servers", "openldap-clients", "lmdb"]
+  expectedOutput: ["openldap-servers-2.4-*", "openldap-clients-2.4-*", "lmdb-0.9.*"]
+- name: "current uid check"
+  command: "id"
+  args: ["-u"]
+  expectedOutput: ["55"]
+- name: "current gid check"
+  command: "id"
+  args: ["-g"]
+  expectedOutput: ["55"]
+
+fileExistenceTests:
+- name: "openldap"
+  path: "/home/ldap/openldap"
+  shouldExist: true
+  permissions: "drwxr-xr-x"
+- name: "runtime"
+  path: "/home/ldap/runtime"
+  shouldExist: true
+  permissions: "drwxr-xr-x"
+- name: "work"
+  path: "/home/ldap/work"
+  shouldExist: true
+  permissions: "drwxr-xr-x"
+- name: "entrypoint.sh"
+  path: "/usr/local/sbin/entrypoint.sh"
+  shouldExist: true
+  permissions: "-rwxr-xr-x"
+
+metadataTest:
+  env:
+    - key: "CONST_LDAP_HOME_DIR"
+      value: "/home/ldap"
+    - key: "CONST_LDAP_USER"
+      value: "ldap"
+    - key: "CONST_LDAP_GROUP"
+      value: "ldap"
+    - key: "CONST_LDAP_UID"
+      value: "55"
+    - key: "CONST_LDAP_GID"
+      value: "55"
+    - key: "CONST_LDAP_DATA_DIR"
+      value: "/home/ldap/openldap"
+    - key: "CONST_LDAP_RUNTIME_DIR"
+      value: "/home/ldap/runtime"
+    - key: "CONST_LDAP_WORK_DIR"
+      value: "/home/ldap/work"
+    - key: "CONST_LDAP_BACKUP_DIR"
+      value: "/home/ldap/openldap/backup"
+    - key: "CONST_LDAP_CERTS_DIR"
+      value: "/home/ldap/openldap/certs"
+    - key: "CONST_LDAP_CONFIG_DIR"
+      value: "/home/ldap/openldap/slapd.d"
+    - key: "CONST_LDAP_DBDATA_DIR"
+      value: "/home/ldap/openldap/dbdata"
+    - key: "CONST_LDAP_NSSDB_SECMOD"
+      value: "/home/ldap/openldap/certs/secmod.db"
+    - key: "CONST_LDAP_NSSDB_NOISE"
+      value: "/home/ldap/openldap/certs/noise"
+    - key: "CONST_LDAP_NSSDB_PASS"
+      value: "/home/ldap/openldap/certs/password"
+  exposedPorts: ["10389", "10636"]
+  workdir: ["/home/ldap"]
+  volumes: ["/home/ldap/openldap"]
+  entrypoint: ["/usr/local/sbin/entrypoint.sh"]
+  cmd: ["start"]

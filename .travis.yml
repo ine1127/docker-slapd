@@ -5,5 +5,14 @@ language: bash
 services:
 - docker
 
+before_install:
+- curl -LO https://storage.googleapis.com/container-structure-test/v0.2.1/container-structure-test
+- chmod +x container-structure-test
+
+before_script:
+- mkdir bin
+- mv container-structure-test /home/travis/bin/container-structure-test
+
 script:
-- docker build -t ine1127/docker-slapd:0.4.2 .
+- docker build -t ine1127/docker-slapd .
+- container-structure-test -test.v -image ine1127/docker-slapd docker-slapd.yaml

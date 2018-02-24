@@ -15,4 +15,4 @@ before_script:
 
 script:
 - docker build -t ine1127/docker-slapd .
-- container-structure-test -test.v -image ine1127/docker-slapd docker-slapd.yaml
+- container-structure-test -test.v -image ine1127/docker-slapd etc/container-test.json

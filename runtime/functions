@@ -102,7 +102,7 @@ function __genldif_install() {
 function __genldif_database() {
 # _rmline = Raw meta character line
 # _emline = escape meta character line
-  local _rm_line _emline _ldap_manager_crypt_pass
+  local _rmline _emline _ldap_manager_crypt_pass
   _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
   cat ${CONST_LDAP_RUNTIME_DIR}/config/database/${_USE_DATABASE} | while read _rmline; do

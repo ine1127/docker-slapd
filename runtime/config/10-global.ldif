@@ -24,4 +24,3 @@ olcReverseLookup: FALSE
 olcSaslSecProps: noplain,noanonymous
 olcSockbufMaxIncoming: 262143
 olcSockbufMaxIncomingAuth: 16777215
-

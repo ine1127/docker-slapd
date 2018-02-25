@@ -11,4 +11,3 @@ olcMaxDerefDepth: 15
 olcReadOnly: FALSE
 olcSyncUseSubentry: FALSE
 olcMonitoring: FALSE
-

@@ -73,15 +73,37 @@ function __ac_from_uc {
 # Returns:
 #   None
 ##########################################################
-function __genldif_install() {
+function __genldif_config() {
 # _rmline = Raw meta character line
 # _emline = escape meta character line
-  local _rmline _emline _ldap_manager_crypt_pass
+  local _ldiffile _rmline _emline _ldap_manager_crypt_pass
   _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
 
-  cat ${CONST_LDAP_RUNTIME_DIR}/config/[0-8][0-9]*.ldif | while read _rmline; do
-    _emline=$(__em_from_rm "${_rmline}")
-    eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
+  ls ${CONST_LDAP_RUNTIME_DIR}/config \
+    | grep ".*.ldif" \
+    | while read _ldiffile; do
+    cat ${CONST_LDAP_RUNTIME_DIR}/config/${_ldiffile} \
+      | while read _rmline; do
+      _emline=$(__em_from_rm "${_rmline}")
+      eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/tmp_${_ldiffile}
+    done
+  done
+
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
+    cat ${CONST_LDAP_WORK_DIR}/tmp_10-global.ldif \
+        ${CONST_LDAP_WORK_DIR}/tmp_99-tls.ldif \
+      > ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif
+
+    mv ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif ${CONST_LDAP_WORK_DIR}/tmp_10-global.ldif
+
+    __gencert_selfsigned
+  fi
+
+  ls ${CONST_LDAP_WORK_DIR} \
+    | grep "tmp_[0-8][0-9]-.*.ldif" \
+    | while read _ldiffile; do
+    cat ${CONST_LDAP_WORK_DIR}/${_ldiffile} >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
+    echo "" >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
   done
 }
 
@@ -166,34 +188,6 @@ function __set_slapd_uri() {
   if [ "${SLAPD_LDAPS}" = "yes" ]; then
     _SLAPD_LDAPS_URI="ldaps://0.0.0.0:10636/"
   fi
-}
-
-##########################################################
-# Join 2 LDIF files
-# Environments:
-#   CONST_LDAP_WORK_DIR
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-##########################################################
-function __join_ldif() {
-  local _src_ldif="$1"
-  local _add_ldif="$2"
-
-  if [ $# -ne 2 ]; then
-    if [ ! -s ${_src_ldif} -o ! -s ${_add_ldif} ]; then
-      return 1
-    fi
-  fi
-
-  sed -i -e '/^$/d' ${_src_ldif}
-
-  cat ${_src_ldif} ${_add_ldif} > ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif
-
-  mv ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif ${_src_ldif}
 }
 
 ##########################################################
@@ -394,15 +388,9 @@ function __slapd_deploy() {
     mkdir ${CONST_LDAP_BACKUP_DIR} ${CONST_LDAP_CERTS_DIR} \
           ${CONST_LDAP_CONFIG_DIR} ${CONST_LDAP_DBDATA_DIR}
   fi
-  if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    __join_ldif ${CONST_LDAP_RUNTIME_DIR}/config/10-global.ldif \
-                ${CONST_LDAP_RUNTIME_DIR}/config/99-tls.ldif
-
-    __gencert_selfsigned
-  fi
 
   __choose_database
-  __genldif_install
+  __genldif_config
   __genldif_database
   __genldif_baseentry
 

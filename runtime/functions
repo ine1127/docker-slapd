@@ -381,12 +381,20 @@ function __slapd_backup() {
 #   None
 ##########################################################
 function __slapd_deploy() {
-  if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ] && \
-     [ ! -d "${CONST_LDAP_CERTS_DIR}" ] && \
-     [ ! -d "${CONST_LDAP_CONFIG_DIR}" ] && \
-     [ ! -d "${CONST_LDAP_DBDATA_DIR}" ]; then
-    mkdir ${CONST_LDAP_BACKUP_DIR} ${CONST_LDAP_CERTS_DIR} \
-          ${CONST_LDAP_CONFIG_DIR} ${CONST_LDAP_DBDATA_DIR}
+  if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ]; then
+    mkdir ${CONST_LDAP_BACKUP_DIR}
+  fi
+
+  if [ ! -d "${CONST_LDAP_CERTS_DIR}" ]; then
+    mkdir ${CONST_LDAP_CERTS_DIR}
+  fi
+
+  if [ ! -d "${CONST_LDAP_CONFIG_DIR}" ]; then
+    mkdir ${CONST_LDAP_CONFIG_DIR}
+  fi
+
+  if [ ! -d "${CONST_LDAP_DBDATA_DIR}" ]; then
+    mkdir ${CONST_LDAP_DBDATA_DIR}
   fi
 
   __choose_database

@@ -234,7 +234,7 @@ function __gencert_selfsigned() {
       ${_dbfile_prefix}
   fi
 
-  certutil -L -d ${CONST_LDAP_CERTS_DIR} -n "${NSSDB_CACERT_NAME}" > /dev/null 2>&1
+  certutil -L -d ${CONST_LDAP_CERTS_DIR} -n "${NSSDB_CACERT_NAME}" ${_dbfile_prefix} > /dev/null 2>&1
   local _cert_status=$?
 
   if [ ${_cert_status} -ne 0 ]; then

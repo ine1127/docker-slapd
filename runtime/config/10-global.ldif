@@ -18,7 +18,8 @@ olcIndexSubstrAnyStep: 2
 olcIndexIntLen: 4
 olcListenerThreads: 1
 olcLocalSSF: 71
-olcLogLevel: 0
+olcLogLevel: ${LDAP_LOGLEVEL}
+olcLogFile: ${CONST_LDAP_WORK_DIR}/slapd.log
 olcReadOnly: FALSE
 olcReverseLookup: FALSE
 olcSaslSecProps: noplain,noanonymous

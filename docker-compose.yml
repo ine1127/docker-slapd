@@ -18,6 +18,7 @@ services:
     - LDAP_MANAGER_PASS=
 
     - LDAP_DATABASE=
+    - LDAP_LOGLEVEL=
 
     - SLAPD_DEBUG_LEVEL=
     - SLAPD_LDAP=

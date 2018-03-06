@@ -16,7 +16,6 @@ services:
 
     - LDAP_MANAGER_NAME=
     - LDAP_MANAGER_PASS=
-    - LDAP_MANAGER_DOMAIN=
 
     - LDAP_DATABASE=
 

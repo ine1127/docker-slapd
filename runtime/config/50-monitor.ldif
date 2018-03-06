@@ -3,7 +3,7 @@ objectClass: olcDatabaseConfig
 olcDatabase: monitor
 olcAccess: to *
   by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" read
-  by dn.base="cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}" read
+  by dn.base="cn=${LDAP_MANAGER_NAME},${_LDAP_DOMAIN_DN}" read
   by * none
 olcAddContentAcl: FALSE
 olcLastMod: TRUE

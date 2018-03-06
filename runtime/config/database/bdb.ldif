@@ -7,7 +7,7 @@ olcAddContentAcl: FALSE
 olcLastMod: TRUE
 olcMaxDerefDepth: 15
 olcMonitoring: TRUE
-olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_MANAGER_DOMAIN}
+olcRootDN: cn=${LDAP_MANAGER_NAME},${_LDAP_DOMAIN_DN}
 olcRootPW: ${_ldap_manager_crypt_pass}
 olcSuffix: ${_LDAP_DOMAIN_DN}
 olcSyncUseSubentry: FALSE

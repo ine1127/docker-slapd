@@ -34,7 +34,7 @@ RUN groupadd -g ${CONST_LDAP_GID} ${CONST_LDAP_GROUP} && \
     yum -y install lmdb && \
     yum clean all && \
     rm -rf /etc/openldap/slapd.d/* && \
-    runuser -m -s /bin/mkdir -- ldap \
+    runuser -m -s /bin/mkdir -- ${CONST_LDAP_USER} \
       ${CONST_LDAP_WORK_DIR} ${CONST_LDAP_DATA_DIR} && \
     chmod 755 /usr/local/sbin/entrypoint.sh
 

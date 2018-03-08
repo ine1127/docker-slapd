@@ -12,3 +12,4 @@ olcRootDN: cn=config
 olcRootPW: ${_ldap_manager_crypt_pass}
 olcSyncUseSubentry: FALSE
 olcMonitoring: FALSE
+# 40-config.ldif EOF

@@ -11,3 +11,4 @@ olcMaxDerefDepth: 15
 olcReadOnly: FALSE
 olcSyncUseSubentry: FALSE
 olcMonitoring: FALSE
+# 50-monitor.ldif EOF

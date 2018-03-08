@@ -14,4 +14,4 @@ dn: ou=${LDAP_GROUP},${_LDAP_DOMAIN_DN}
 objectClass: organizationalUnit
 ou: ${LDAP_GROUP}
 description: ${LDAP_GROUP_DESC}
-
+# 10-base.ldif EOF

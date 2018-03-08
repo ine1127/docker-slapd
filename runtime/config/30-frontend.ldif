@@ -9,3 +9,4 @@ olcReadOnly: FALSE
 olcSchemaDN: cn=Subschema
 olcSyncUseSubentry: FALSE
 olcMonitoring: FALSE
+# 30-frontend.ldif EOF

@@ -5,3 +5,4 @@ olcTLSCertificateKeyFile: ${CONST_LDAP_CERTS_DIR}/password
 olcTLSCRLCheck: none
 olcTLSVerifyClient: never
 olcTLSProtocolMin: 3.2
+# 100-tls.ldif EOF

@@ -40,4 +40,4 @@ olcDbIndex: loginShell pres,eq
 olcDbIndex: memberUid pres,eq,sub
 olcDbIndex: nisMapName pres,eq,sub
 olcDbIndex: nisMapEntry pres,eq,sub
-
+# bdb.ldif EOF

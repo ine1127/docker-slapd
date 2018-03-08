@@ -59,7 +59,7 @@ function __ac_from_uc {
 }
 
 ##########################################################
-# Generate initialize LDIF file
+# Deploy file in ${CONST_LDAP_RUNTIME_DIR}
 # Environments:
 #   CONST_LDAP_RUNTIME_DIR
 #   CONST_LDAP_WORK_DIR
@@ -67,91 +67,122 @@ function __ac_from_uc {
 # Globals:
 #   None
 # Arguments:
-#   None
+#   $1 (config, database, entry)
 # Returns:
-#   None
+#   ${_deploy_file} (in ${CONST_LDAP_WORK_DIR)/${_deploy_dir}
 ##########################################################
-function __genldif_config() {
-# _rmline = Raw meta character line
-# _emline = escape meta character line
-  local _ldiffile _rmline _emline _ldap_manager_crypt_pass
-  _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
+function __genldif_deploy() {
+  # _rmline = Raw meta character line
+  # _emline = escape meta character line
+  local _deploy_type="$1"
+  local _read_dir
 
-  ls ${CONST_LDAP_RUNTIME_DIR}/config \
+  case "${_deploy_type}" in
+    config )
+      _read_dir="${CONST_LDAP_RUNTIME_DIR}/config"
+    ;;
+    database )
+      _read_dir="${CONST_LDAP_RUNTIME_DIR}/config/database"
+    ;;
+    entry )
+      _read_dir="${CONST_LDAP_RUNTIME_DIR}/entry"
+    ;;
+    * )
+      exit 1
+    ;;
+  esac
+
+  local _deploy_dir _ldap_manager_crypt_pass
+  _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s "${LDAP_MANAGER_PASS}")
+  _deploy_dir=$(mktemp -d -p ${CONST_LDAP_WORK_DIR} --suffix="_${_deploy_type}")
+
+  local _ldif_file _deploy_file _rmline _emline
+  ls "${_read_dir}" \
     | grep ".*.ldif" \
-    | while read _ldiffile; do
-    cat ${CONST_LDAP_RUNTIME_DIR}/config/${_ldiffile} \
-      | while read _rmline; do
+    | while read _ldif_file; do
+    _deploy_file=$(mktemp -p ${_deploy_dir} --suffix="_${_ldif_file}")
+
+    cat "${_read_dir}/${_ldif_file}" | while read _rmline; do
       _emline=$(__em_from_rm "${_rmline}")
-      eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/tmp_${_ldiffile}
+      eval echo "${_emline}" >> "${_deploy_file}"
     done
   done
+}
 
-  if [ "${SLAPD_LDAPS}" = "yes" ]; then
-    cat ${CONST_LDAP_WORK_DIR}/tmp_10-global.ldif \
-        ${CONST_LDAP_WORK_DIR}/tmp_99-tls.ldif \
-      > ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif
+##########################################################
+# integrate LDIF file deployed
+# Environments:
+#   CONST_LDAP_WORK_DIR
+# Globals:
+#   None
+# Arguments:
+#   $1 (Specify directory name part of ${CONST_LDAP_WORK_DIR})
+#   $@ (Spacify file name part of ${CONST_LDAP_RUNTIME_DIR}/*.ldif
+# Returns:
+#   ${_integrate_file} (in ${CONST_LDAP_WORK_DIR})
+##########################################################
+function __genldif_integrate() {
+  local _integrate_type="$1"
+  local _deployed_dir _integrate_file _ldif_file
 
-    mv ${CONST_LDAP_WORK_DIR}/tmp_swap.ldif ${CONST_LDAP_WORK_DIR}/tmp_10-global.ldif
+  _deployed_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_integrate_type}")
+  _integrate_file=$(mktemp -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_integrate_type}.ldif")
 
-    __gencert_selfsigned
+  shift 1
+  if [ ! -z "$@" ]; then
+    for _target_file in "$@"; do
+      ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
+        | sort -n -t "_" -k 2             \
+        | grep "tmp.*${_target_file}" \
+        | while read _ldif_file; do
+        cat "${CONST_LDAP_WORK_DIR}/${_deployed_dir}/${_ldif_file}" >> "${_integrate_file}"
+        echo "" >> "${_integrate_file}"
+      done
+    done
+  else
+
+    ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
+      | sort -n -t "_" -k 2 \
+      | grep "tmp.*.ldif" \
+      | while read _ldif_file; do
+      cat "${CONST_LDAP_WORK_DIR}/${_deployed_dir}/${_ldif_file}" >> "${_integrate_file}"
+      echo "" >> "${_integrate_file}"
+    done
   fi
-
-  ls ${CONST_LDAP_WORK_DIR} \
-    | grep "tmp_[0-8][0-9]-.*.ldif" \
-    | while read _ldiffile; do
-    cat ${CONST_LDAP_WORK_DIR}/${_ldiffile} >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
-    echo "" >> ${CONST_LDAP_WORK_DIR}/tmp_config.ldif
-  done
 }
 
 ##########################################################
-# Generate database LDIF file
+# join 2 LDIF file
 # Environments:
-#   CONST_LDAP_RUNTIME_DIR
-#   CONST_LDAP_WORK_DIR
-#   LDAP_DATABASE
-#   LDAP_MANAGER_PASS
-# Globals:
-#   _USE_DATABASE
-# Arguments:
-#   None
-# Returns:
-#   None
-##########################################################
-function __genldif_database() {
-# _rmline = Raw meta character line
-# _emline = escape meta character line
-  local _rmline _emline _ldap_manager_crypt_pass
-  _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s ${LDAP_MANAGER_PASS})
-
-  cat ${CONST_LDAP_RUNTIME_DIR}/config/database/${_USE_DATABASE} | while read _rmline; do
-    _emline=$(__em_from_rm "${_rmline}")
-    eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif
-  done
-}
-
-##########################################################
-# Generate base entry LDIF file
-# Environments:
-#   CONST_LDAP_RUNTIME_DIR
 #   CONST_LDAP_WORK_DIR
 # Globals:
 #   None
 # Arguments:
-#   None
+#   $1 (Specify directory neme part of ${CONST_LDAP_WORK_DIR})
+#   $2 (join source file)
+#   $3 (join add file)
 # Returns:
-#   None
+#   ${_result_file}
 ##########################################################
-function __genldif_baseentry() {
-# _rmline = Raw meta character line
-# _emline = escape meta character line
-  local _rmline _emline
+function __join_file() {
+  local _find_dir="$1"
+  local _src_file="$2"
+  local _add_file="$3"
+  local _found_dir _join_src_file _join_add_file _join_resultfile
 
-  cat ${CONST_LDAP_RUNTIME_DIR}/config/entry/*.ldif | while read _rmline; do
-    _emline=$(__em_from_rm "${_rmline}") 
-    eval echo "${_emline}" >> ${CONST_LDAP_WORK_DIR}/entry.ldif
-  done
+  _found_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_find_dir}")
+
+  if [ ! -z ${_found_dir} ]; then
+    _join_src_file=$(ls "${CONST_LDAP_WORK_DIR}/${_found_dir}" | grep ${_src_file})
+    _join_add_file=$(ls "${CONST_LDAP_WORK_DIR}/${_found_dir}" | grep ${_add_file})
+    _result_file=$(mktemp -p ${CONST_LDAP_WORK_DIR})
+    cat "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_src_file}" \
+        "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_add_file}" \
+      > "${_result_file}"
+
+    mv "${_result_file}" "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_src_file}"
+    rm "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_add_file}"
+  fi
 }
 
 ##########################################################
@@ -210,17 +241,17 @@ function __set_slapd_uri() {
 #   None
 ##########################################################
 function __gencert_selfsigned() {
-  if [ ! -z ${NSSDB_PREFIX} ]; then
+  if [ ! -z "${NSSDB_PREFIX}" ]; then
     local _dbfile_prefix
     readonly _dbfile_prefix="-P ${NSSDB_PREFIX}"
   fi
 
   # Create noise File
   dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
-    > ${CONST_LDAP_NSSDB_NOISE}
+    > "${CONST_LDAP_NSSDB_NOISE}"
 
   # Create password File
-  echo ${NSSDB_PASSWORD} > ${CONST_LDAP_NSSDB_PASS}
+  echo "${NSSDB_PASSWORD}" > "${CONST_LDAP_NSSDB_PASS}"
 
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" ] && \
      [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}/${NSSDB_PREFIX}cert8.db" ] && \
@@ -232,10 +263,15 @@ function __gencert_selfsigned() {
       ${_dbfile_prefix}
   fi
 
-  certutil -L -d ${CONST_LDAP_CERTS_DIR} -n "${NSSDB_CACERT_NAME}" ${_dbfile_prefix} > /dev/null 2>&1
-  local _cert_status=$?
+  certutil -L \
+    -d "${CONST_LDAP_CERTS_DIR}" \
+    -n "${NSSDB_CACERT_NAME}"    \
+       ${_dbfile_prefix} \
+    > /dev/null 2>&1
 
-  if [ ${_cert_status} -ne 0 ]; then
+  local _cert_status="$?"
+
+  if [ "${_cert_status}" -ne 0 ]; then
     # Create New CA Certicicate (Self Signed)
     certutil -S -x                   \
       -d "${CONST_LDAP_CERTS_DIR}"   \
@@ -251,10 +287,14 @@ function __gencert_selfsigned() {
       ${_dbfile_prefix}
   fi
 
-  certutil -L -d ${CONST_LDAP_CERTS_DIR} -n "${NSSDB_CERT_NAME}" > /dev/null 2>&1
-  local _cert_status=$?
+  certutil -L \
+    -d "${CONST_LDAP_CERTS_DIR}" \
+    -n "${NSSDB_CERT_NAME}"      \
+    > /dev/null 2>&1
 
-  if  [ ${_cert_status} -ne 0 ]; then
+  local _cert_status="$?"
+
+  if  [ "${_cert_status}" -ne 0 ]; then
     # Create New Certificate Signed CA
     certutil -S                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
@@ -272,22 +312,22 @@ function __gencert_selfsigned() {
       ${_dbfile_prefix}
   fi
 
-  if [ ! -s ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE} ]; then
+  if [ ! -s "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}" ]; then
     certutil -L                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -n "${NSSDB_CACERT_NAME}"      \
       ${_dbfile_prefix}              \
-      -a > ${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}
+      -a > "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}"
   fi
 
-  if [ ! -s ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE} ]; then
+  if [ ! -s "${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}" ]; then
     certutil -L                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -n "${NSSDB_CERT_NAME}"        \
       ${_dbfile_prefix}              \
-      -a > ${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}
+      -a > "${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}"
   fi
 }
 
@@ -303,7 +343,7 @@ function __gencert_selfsigned() {
 #   None
 ##########################################################
 function __choose_database() {
-  case ${LDAP_DATABASE} in
+  case "${LDAP_DATABASE}" in
     mdb )
       _USE_DATABASE="mdb.ldif"
     ;;
@@ -314,54 +354,6 @@ function __choose_database() {
       echo "${LDAP_DATABASE} is none" >&2
     ;;
   esac
-}
-
-##########################################################
-# Backup slapd config and database
-# Environments:
-#   CONST_LDAP_BACKUP_DIR
-#   CONST_LDAP_CONFIG_DIR
-#   CONST_LDAP_DBDATA_DIR
-#   LDAP_DATABASE
-# Globals:
-#   None
-# Arguments:
-#   Backup target
-# Returns:
-#   None
-##########################################################
-function __slapd_backup() {
-  if [ ! -z $1 ]; then
-    if [ ! -d ${CONST_LDAP_BACKUP_DIR} ]; then
-      mkdir ${CONST_LDAP_BACKUP_DIR}
-    fi
-
-    case $1 in
-      config )
-        slapcat -F ${CONST_LDAP_CONFIG_DIR} -n 0 \
-          -l ${CONST_LDAP_BACKUP_DIR}/slapd_config.ldif
-        slapcat -F ${CONST_LDAP_CONFIG_DIR} -n 2 \
-          -l ${CONST_LDAP_BACKUP_DIR}/slapd_data.ldif
-      ;;
-      dbdata )
-        case ${LDAP_DATABASE} in
-         mdb )
-           mdb_copy ${CONST_LDAP_DBDATA_DIR} ${CONST_LDAP_BACKUP_DIR}
-         ;;
-         bdb )
-           db_hotbackup -Dc -h ${CONST_LDAP_DBDATA_DIR} -b ${CONST_LDAP_BACKUP_DIR}
-           db_verify -h ${CONST_LDAP_DBDATA_DIR} $(ls ${CONST_LDAP_BACKUP_DIR}/*.bdb)
-         ;;
-         * )
-           echo "${LDAP_DATABASE} is none" >&2
-         ;;
-        esac
-      ;;
-      * )
-        echo "Invalid argument $1" >&2
-      ;;
-    esac
-  fi
 }
 
 ##########################################################
@@ -380,31 +372,48 @@ function __slapd_backup() {
 ##########################################################
 function __slapd_deploy() {
   if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ]; then
-    mkdir ${CONST_LDAP_BACKUP_DIR}
+    mkdir "${CONST_LDAP_BACKUP_DIR}"
   fi
 
   if [ ! -d "${CONST_LDAP_CERTS_DIR}" ]; then
-    mkdir ${CONST_LDAP_CERTS_DIR}
+    mkdir "${CONST_LDAP_CERTS_DIR}"
   fi
 
   if [ ! -d "${CONST_LDAP_CONFIG_DIR}" ]; then
-    mkdir ${CONST_LDAP_CONFIG_DIR}
+    mkdir "${CONST_LDAP_CONFIG_DIR}"
   fi
 
   if [ ! -d "${CONST_LDAP_DBDATA_DIR}" ]; then
-    mkdir ${CONST_LDAP_DBDATA_DIR}
+    mkdir "${CONST_LDAP_DBDATA_DIR}"
   fi
 
   __choose_database
-  __genldif_config
-  __genldif_database
-  __genldif_baseentry
+
+  __genldif_deploy config
+  __genldif_deploy database
+  __genldif_deploy entry
+
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
+    __join_file config 10-global.ldif 11-global-tls.ldif
+    __gencert_selfsigned
+  fi
+
+  __genldif_integrate config
+  __genldif_integrate database ${_USE_DATABASE}
+  __genldif_integrate entry
 
   __set_slapd_uri
 
-  cat ${CONST_LDAP_WORK_DIR}/tmp_config.ldif            \
-      ${CONST_LDAP_WORK_DIR}/tmp_${LDAP_DATABASE}.ldif  \
-    > ${CONST_LDAP_WORK_DIR}/config.ldif
+  local _tmp_config_ldif _tmp_database_ldif _tmp_entry_ldif
+  _tmp_config_ldif=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_config.ldif")
+  _tmp_database_ldif=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_database.ldif")
+  cat "${CONST_LDAP_WORK_DIR}/${_tmp_config_ldif}"   \
+      "${CONST_LDAP_WORK_DIR}/${_tmp_database_ldif}" \
+    > "${CONST_LDAP_WORK_DIR}/config.ldif"
+
+  _tmp_entry_ldif=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_entry.ldif")
+  cat "${CONST_LDAP_WORK_DIR}/${_tmp_entry_ldif}" \
+    > "${CONST_LDAP_WORK_DIR}/entry.ldif"
 }
 
 ##########################################################
@@ -421,13 +430,22 @@ function __slapd_deploy() {
 #   None
 ##########################################################
 function __slapd_install() {
-  if [ ! -e ${CONST_LDAP_CONFIG_DIR}/.slapd_installed ]; then
-    slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
-      -n 0 -l ${CONST_LDAP_WORK_DIR}/config.ldif
-    slapadd -v -F ${CONST_LDAP_CONFIG_DIR} \
-      -n 2 -l ${CONST_LDAP_WORK_DIR}/entry.ldif
+  if [ ! -e "${CONST_LDAP_CONFIG_DIR}/.slapd_installed" ]; then
+    slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
+      -n 0 -l "${CONST_LDAP_WORK_DIR}/config.ldif"
 
-    touch ${CONST_LDAP_CONFIG_DIR}/.slapd_installed
+    cat "${CONST_LDAP_WORK_DIR}/config.ldif" \
+      | grep "^#"        \
+      | awk '{print $2}' \
+      > "${CONST_LDAP_CONFIG_DIR}/.slapd_installed"
+
+    slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
+      -n 2 -l "${CONST_LDAP_WORK_DIR}/entry.ldif"
+
+    cat "${CONST_LDAP_WORK_DIR}/entry.ldif" \
+      | grep "^#"        \
+      | awk '{print $2}' \
+      >> "${CONST_LDAP_CONFIG_DIR}/.slapd_installed"
   fi
 }
 
@@ -443,7 +461,55 @@ function __slapd_install() {
 #   None
 ##########################################################
 function __slapd_cleanup() {
-  rm -rf ${CONST_LDAP_WORK_DIR}/tmp_*
+  rm -rf ${CONST_LDAP_WORK_DIR}/tmp.*
+}
+
+##########################################################
+# Backup slapd config and database
+# Environments:
+#   CONST_LDAP_BACKUP_DIR
+#   CONST_LDAP_CONFIG_DIR
+#   CONST_LDAP_DBDATA_DIR
+#   LDAP_DATABASE
+# Globals:
+#   None
+# Arguments:
+#   Backup target
+# Returns:
+#   None
+##########################################################
+function __slapd_backup() {
+  if [ ! -z "$1" ]; then
+    if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ]; then
+      mkdir "${CONST_LDAP_BACKUP_DIR}"
+    fi
+
+    case "$1" in
+      config )
+        slapcat -F "${CONST_LDAP_CONFIG_DIR}" -n 0 \
+          -l "${CONST_LDAP_BACKUP_DIR}/slapd_config.ldif"
+        slapcat -F ${CONST_LDAP_CONFIG_DIR} -n 2 \
+          -l "${CONST_LDAP_BACKUP_DIR}/slapd_data.ldif"
+      ;;
+      dbdata )
+        case "${LDAP_DATABASE}" in
+         mdb )
+           mdb_copy "${CONST_LDAP_DBDATA_DIR}" "${CONST_LDAP_BACKUP_DIR}"
+         ;;
+         bdb )
+           db_hotbackup -Dc -h "${CONST_LDAP_DBDATA_DIR}" -b "${CONST_LDAP_BACKUP_DIR}"
+           db_verify -h "${CONST_LDAP_DBDATA_DIR}" $(ls ${CONST_LDAP_BACKUP_DIR}/*.bdb)
+         ;;
+         * )
+           echo "${LDAP_DATABASE} is none" >&2
+         ;;
+        esac
+      ;;
+      * )
+        echo "Invalid argument $1" >&2
+      ;;
+    esac
+  fi
 }
 
 ##########################################################
@@ -461,8 +527,8 @@ function __slapd_cleanup() {
 function __slapd_call_pid() {
   _PID_FILE="${CONST_LDAP_WORK_DIR}/slapd.pid"
 
-  if [ -s ${_PID_FILE} ]; then
-    _PID=$(cat ${_PID_FILE})
+  if [ -s "${_PID_FILE}" ]; then
+    _PID=$(cat "${_PID_FILE}")
   fi
 
   _PID=${_PID:-noproc}
@@ -486,10 +552,10 @@ function __slapd_call_pid() {
 function __slapd_start() {
   __slapd_call_pid
 
-  if [ "noproc" = "${_PID}" ]; then
-    exec /usr/sbin/slapd -d ${SLAPD_DEBUG_LEVEL} \
+  if [ "${_PID}" = "noproc" ]; then
+    exec /usr/sbin/slapd -d "${SLAPD_DEBUG_LEVEL}" \
       -h "${_SLAPD_LDAP_URI} ${_SLAPD_LDAPI_URI} ${_SLAPD_LDAPS_URI}" \
-      -F ${CONST_LDAP_CONFIG_DIR} \
+      -F "${CONST_LDAP_CONFIG_DIR}" \
       -u ldap
   fi
 }
@@ -509,7 +575,7 @@ function __slapd_start() {
 function __slapd_stop() {
   __slapd_call_pid
 
-  if [ "noproc" != "${_PID}" ]; then
+  if [ "${_PID}" != "noproc" ]; then
     kill -INT ${_PID}
     rm ${_PID_FILE}
   fi
@@ -529,7 +595,7 @@ function __slapd_stop() {
 function __slapd_status() {
   __slapd_call_pid
 
-  if [ "noproc" != "${_PID}" ]; then
+  if [ "${_PID}" != "noproc" ]; then
     echo "running slapd... [Pid: ${_PID}]"
   else
     echo "stopping slapd..."

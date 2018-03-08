@@ -6,13 +6,20 @@ services:
 - docker
 
 before_install:
+- mkdir bin
+
+install:
 - curl -LO https://storage.googleapis.com/container-structure-test/v0.2.1/container-structure-test
 - chmod +x container-structure-test
-
-before_script:
-- mkdir bin
 - mv container-structure-test /home/travis/bin/container-structure-test
 
+before_script:
+- docker image build -t ine1127/docker-slapd .
+- docker image build -t ine1127/docker-slapd-test-base -f test/Dockerfile.test --target test-base .
+- docker image build -t ine1127/docker-slapd-test-mdb -f test/Dockerfile.test --target test-mdb .
+- docker image build -t ine1127/docker-slapd-test-bdb -f test/Dockerfile.test --target test-bdb .
+
+
 script:
-- docker build -t ine1127/docker-slapd .
-- container-structure-test -test.v -image ine1127/docker-slapd etc/container-test.json
+- container-structure-test -test.v -image ine1127/docker-slapd test/container-test-prod.json
+- container-structure-test -test.v -image ine1127/docker-slapd-test-base test/container-test-base.json

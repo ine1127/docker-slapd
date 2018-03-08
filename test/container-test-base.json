@@ -1,0 +1,300 @@
+{
+  "schemaVersion": "2.0.0",
+
+  "commandTest": [
+    {
+      "name": "check uid",
+      "command": "id",
+      "args": [
+        "-u"
+      ],
+      "expectedOutput": [
+        "55"
+      ]
+    },
+    {
+      "name": "inotify-tools",
+      "command": "rpm",
+      "args": [
+        "-qa",
+        "inotify-tools"
+      ],
+      "expectedOutput": [
+        "inotify-tools-*"
+      ]
+    }
+  ],
+  "fileExistenceTests": [
+    {
+      "name": "openldap-test",
+      "path": "/home/ldap/openldap-test",
+      "shouldExist": true,
+      "permissions": "drwxr-xr-x"
+    },
+    {
+      "name": "backup",
+      "path": "/home/ldap/openldap-test/backup",
+      "shouldExist": true,
+      "permissions": "drwxr-xr-x"
+    },
+    {
+      "name": "certs",
+      "path": "/home/ldap/openldap-test/certs",
+      "shouldExist": true,
+      "permissions": "drwxr-xr-x"
+    },
+    {
+      "name": "dbdata",
+      "path": "/home/ldap/openldap-test/dbdata",
+      "shouldExist": true,
+      "permissions": "drwxr-xr-x"
+    },
+    {
+      "name": "slapd.d",
+      "path": "/home/ldap/openldap-test/slapd.d",
+      "shouldExist": true,
+      "permissions": "drwxr-xr-x"
+    },
+    {
+      "name": "ca pem file",
+      "path": "/home/ldap/openldap-test/certs/reverse_ca.pem",
+      "shouldExist": true,
+      "permissions": "-rw-r--r--"
+    },
+    {
+      "name": "server pem file",
+      "path": "/home/ldap/openldap-test/certs/gothloli.pem",
+      "shouldExist": true,
+      "permissions": "-rw-r--r--"
+    },
+    {
+      "name": "cert db",
+      "path": "/home/ldap/openldap-test/certs/octbr_cert8.db",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "key db",
+      "path": "/home/ldap/openldap-test/certs/octbr_key3.db",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "secmod db",
+      "path": "/home/ldap/openldap-test/certs/secmod.db",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "password file",
+      "path": "/home/ldap/openldap-test/certs/password",
+      "shouldExist": true,
+      "permissions": "-rw-r--r--"
+    },
+    {
+      "name": "noise",
+      "path": "/home/ldap/openldap-test/certs/noise",
+      "shouldExist": true,
+      "permissions": "-rw-r--r--"
+    },
+    {
+      "name": "cn=config.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn=config directory",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config",
+      "shouldExist": true,
+      "permissions": "drwxr-x---"
+    },
+    {
+      "name": "olcDatabase={0}config.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/olcDatabase={0}config.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "olcDatabase={-1}frontend.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/olcDatabase={-1}frontend.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "olcDatabase={1}monitor.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/olcDatabase={1}monitor.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn=schema.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn=schema directory",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema",
+      "shouldExist": true,
+      "permissions": "drwxr-x---"
+    },
+    {
+      "name": "cn={0}corba.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema/cn={0}corba.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn={1}core.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema/cn={1}core.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn={2}cosine.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema/cn={2}cosine.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn={3}inetorgperson.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema/cn={3}inetorgperson.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn={4}core.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema/cn={4}nis.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    },
+    {
+      "name": "cn={5}openldap.ldif file",
+      "path": "/home/ldap/openldap-test/slapd.d/cn=config/cn=schema/cn={5}openldap.ldif",
+      "shouldExist": true,
+      "permissions": "-rw-------"
+    }
+  ],
+
+  "metadataTest": {
+    "env": [
+      {
+        "key": "CONST_LDAP_DATA_DIR",
+        "value": "/home/ldap/openldap-test"
+      },
+      {
+        "key": "CONST_LDAP_BACKUP_DIR",
+        "value": "/home/ldap/openldap-test/backup"
+      },
+      {
+        "key": "CONST_LDAP_CERTS_DIR",
+        "value": "/home/ldap/openldap-test/certs"
+      },
+      {
+        "key": "CONST_LDAP_CONFIG_DIR",
+        "value": "/home/ldap/openldap-test/slapd.d"
+      },
+      {
+        "key": "CONST_LDAP_DBDATA_DIR",
+        "value": "/home/ldap/openldap-test/dbdata"
+      },
+      {
+        "key": "CONST_LDAP_NSSDB_SECMOD",
+        "value": "/home/ldap/openldap-test/certs/secmod.db"
+      },
+      {
+        "key": "CONST_LDAP_NSSDB_NOISE",
+        "value": "/home/ldap/openldap-test/certs/noise"
+      },
+      {
+        "key": "CONST_LDAP_NSSDB_PASS",
+        "value": "/home/ldap/openldap-test/certs/password"
+      },
+      {
+        "key": "LDAP_DOMAIN",
+        "value": "kotono.hayama.lolita"
+      },
+      {
+        "key": "LDAP_ORGNAME",
+        "value": "Arcana City"
+      },
+      {
+        "key": "LDAP_ORGNAME_DESC",
+        "value": "Saint October"
+      },
+      {
+        "key": "LDAP_MANAGER_NAME",
+        "value": "Joshua"
+      },
+      {
+        "key": "LDAP_MANAGER_PASS",
+        "value": "cake"
+      },
+      {
+        "key": "LDAP_PEOPLE",
+        "value": "Girls"
+      },
+      {
+        "key": "LDAP_PEOPLE_DESC",
+        "value": "Kotono, Natsuki, Misaki"
+      },
+      {
+        "key": "LDAP_GROUP",
+        "value": "GothicLolita"
+      },
+      {
+        "key": "LDAP_GROUP_DESC",
+        "value": "Gothic & Lolita Girls detective team"
+      },
+      {
+        "key": "LDAP_LOGLEVEL",
+        "value": "513"
+      },
+      {
+        "key": "SLAPD_DEBUG_LEVEL",
+        "value": "3"
+      },
+      {
+        "key": "SLAPD_LDAP",
+        "value": "yes"
+      },
+      {
+        "key": "SLAPD_LDAPI",
+        "value": "yes"
+      },
+      {
+        "key": "SLAPD_LDAPS",
+        "value": "yes"
+      },
+      {
+        "key": "CA_PEM_FILE",
+        "value": "reverse_ca.pem"
+      },
+      {
+        "key": "SERVER_PEM_FILE",
+        "value": "gothloli.pem"
+      },
+      {
+        "key": "SSL_HOSTNAME",
+        "value": "black.kotono.hayama.lolita"
+      },
+      {
+        "key": "NSSDB_PREFIX",
+        "value": "octbr_"
+      },
+      {
+        "key": "NSSDB_PASSWORD",
+        "value": "Euan"
+      },
+      {
+        "key": "NSSDB_CACERT_NAME",
+        "value": "Reverse Certificate"
+      },
+      {
+        "key": "NSSDB_CERT_NAME",
+        "value": "GothicLolita"
+      }
+    ]
+  }
+}

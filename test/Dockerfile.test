@@ -1,0 +1,64 @@
+FROM ine1127/docker-slapd AS test-base
+LABEL maintainer "ine1127"
+LABEL use "Prebuild for test"
+
+ENV CONST_LDAP_DATA_DIR="${CONST_LDAP_HOME_DIR}/openldap-test"
+ENV CONST_LDAP_BACKUP_DIR="${CONST_LDAP_DATA_DIR}/backup" \
+    CONST_LDAP_CERTS_DIR="${CONST_LDAP_DATA_DIR}/certs" \
+    CONST_LDAP_CONFIG_DIR="${CONST_LDAP_DATA_DIR}/slapd.d" \
+    CONST_LDAP_DBDATA_DIR="${CONST_LDAP_DATA_DIR}/dbdata"
+ENV CONST_LDAP_NSSDB_SECMOD="${CONST_LDAP_CERTS_DIR}/secmod.db" \
+    CONST_LDAP_NSSDB_NOISE="${CONST_LDAP_CERTS_DIR}/noise" \
+    CONST_LDAP_NSSDB_PASS="${CONST_LDAP_CERTS_DIR}/password"
+ 
+ENV LDAP_DOMAIN="kotono.hayama.lolita" \
+    LDAP_ORGNAME="Arcana City" \
+    LDAP_ORGNAME_DESC="Saint October" \
+    LDAP_MANAGER_NAME="Joshua" \
+    LDAP_MANAGER_PASS="cake" \
+    LDAP_PEOPLE="Girls" \
+    LDAP_PEOPLE_DESC="Kotono, Natsuki, Misaki" \
+    LDAP_GROUP="GothicLolita" \
+    LDAP_GROUP_DESC="Gothic & Lolita Girls detective team" \
+    LDAP_LOGLEVEL="513" \
+    SLAPD_DEBUG_LEVEL="3" \
+    SLAPD_LDAP="yes" \
+    SLAPD_LDAPI="yes" \
+    SLAPD_LDAPS="yes" \
+    CA_PEM_FILE="reverse_ca.pem" \
+    SERVER_PEM_FILE="gothloli.pem" \
+    SSL_HOSTNAME="black.kotono.hayama.lolita" \
+    NSSDB_PREFIX="octbr_" \
+    NSSDB_PASSWORD="Euan" \
+    NSSDB_CACERT_NAME="Reverse Certificate" \
+    NSSDB_CERT_NAME="GothicLolita"
+
+USER root
+
+RUN yum -y install inotify-tools && \
+    yum clean all
+
+USER ldap
+
+RUN mkdir ${CONST_LDAP_DATA_DIR} && \
+    entrypoint.sh init
+
+### test mdb
+FROM test-base AS test-mdb
+LABEL maintainer "ine1127"
+LABEL use "test mdb"
+
+ENV LDAP_DATABASE="mdb"
+
+RUN rm -rf ${CONST_LDAP_DATA_DIR}/* && \
+    entrypoint.sh init
+
+### test bdb
+FROM test-base AS test-bdb
+LABEL maintainer "ine1127"
+LABEL use "test bdb"
+
+ENV LDAP_DATABASE="bdb"
+
+RUN rm -rf ${CONST_LDAP_DATA_DIR}/* && \
+    entrypoint.sh init

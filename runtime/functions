@@ -123,13 +123,14 @@ function __genldif_deploy() {
 ##########################################################
 function __genldif_integrate() {
   local _integrate_type="$1"
-  local _deployed_dir _integrate_file _ldif_file
+  local _deployed_dir _integrate_file _ldif_file _target_file
 
   _deployed_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_integrate_type}")
   _integrate_file=$(mktemp -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_integrate_type}.ldif")
 
   shift 1
-  if [ ! -z "$@" ]; then
+  local _set_args="$1"
+  if [ ! -z "${_set_args}" ]; then
     for _target_file in "$@"; do
       ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
         | sort -n -t "_" -k 2             \
@@ -168,7 +169,7 @@ function __join_file() {
   local _find_dir="$1"
   local _src_file="$2"
   local _add_file="$3"
-  local _found_dir _join_src_file _join_add_file _join_resultfile
+  local _found_dir _join_src_file _join_add_file _result_file
 
   _found_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_find_dir}")
 
@@ -398,7 +399,7 @@ function __slapd_deploy() {
     __gencert_selfsigned
   fi
 
-  __genldif_integrate config
+  __genldif_integrate config 10-global.ldif 20-schema.ldif 30-frontend.ldif 40-config.ldif 50-monitor.ldif
   __genldif_integrate database ${_USE_DATABASE}
   __genldif_integrate entry
 

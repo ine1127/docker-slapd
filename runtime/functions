@@ -131,25 +131,20 @@ function __genldif_integrate() {
   shift 1
   local _set_args="$1"
   if [ ! -z "${_set_args}" ]; then
-    for _target_file in "$@"; do
-      ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
-        | sort -n -t "_" -k 2             \
-        | grep "tmp.*${_target_file}" \
-        | while read _ldif_file; do
-        cat "${CONST_LDAP_WORK_DIR}/${_deployed_dir}/${_ldif_file}" >> "${_integrate_file}"
-        echo "" >> "${_integrate_file}"
-      done
-    done
+    _set_args="$@"
   else
+    _set_args=".ldif"
+  fi
 
+  for _target_file in ${_set_args}; do
     ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
-      | sort -n -t "_" -k 2 \
-      | grep "tmp.*.ldif" \
+      | sort -n -t "_" -k 2             \
+      | grep "tmp.*${_target_file}" \
       | while read _ldif_file; do
       cat "${CONST_LDAP_WORK_DIR}/${_deployed_dir}/${_ldif_file}" >> "${_integrate_file}"
       echo "" >> "${_integrate_file}"
     done
-  fi
+  done
 }
 
 ##########################################################

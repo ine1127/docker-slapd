@@ -14,8 +14,7 @@ source ${CONST_LDAP_RUNTIME_DIR}/functions
 #   None
 ##########################################################
 function __usage() {
-  local _script_name
-  _script_name=$0
+  local _script_name=$0
   cat <<EOL
 ${_script_name} is a script for starting slapd service on Docker container
 

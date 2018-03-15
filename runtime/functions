@@ -446,6 +446,30 @@ function __slapd_install() {
 }
 
 ##########################################################
+# slapd config test in ${CONST_LDAP_CONFIG_DIR}
+# Environments:
+#   CONST_LDAP_CONFIG_DIR
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+##########################################################
+function __slapd_configtest() {
+  slaptest -F ${CONST_LDAP_CONFIG_DIR} -Q 2> /dev/null
+  local _test_status=$?
+
+  if [ "${_test_status}" -eq "0" ]; then
+    return ${_test_status}
+  else
+    echo -e "[\e[31m Error\e[m ] Failed to slapd config test" >&2
+    slaptest -F ${CONST_LDAP_CONFIG_DIR} -d 4
+    exit ${_test_status}
+  fi
+}
+
+##########################################################
 # Remove temporary files
 # Environments:
 #   CONST_LDAP_WORK_DIR

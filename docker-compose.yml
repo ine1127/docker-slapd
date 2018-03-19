@@ -28,7 +28,10 @@ services:
     - CA_PEM_FILE=
     - SERVER_PEM_FILE=
 
-    - SSL_HOSTNAME=
+    - CERT_CA_CN=
+    - CERT_CA_O=
+    - CERT_CA_C=
+    - CERT_SV_CN=
     - NSSDB_PASSWORD=
     - NSSDB_CACERT_NAME=
     - NSSDB_CERT_NAME=

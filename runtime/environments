@@ -27,7 +27,10 @@ CA_PEM_FILE=${CA_PEM_FILE:-ca.pem}
 SERVER_PEM_FILE=${SERVER_PEM_FILE:-server.pem}
 
 # HOSTNAME in Certificate
-SSL_HOSTNAME=${SSL_HOSTNAME:-${HOSTNAME}}
+CERT_CA_CN=${CERT_CA_CN:-Private CA}
+CERT_CA_O=${CERT_CA_O:-Example Inc.}
+CERT_CA_C=${CERT_CA_C:-JP}
+CERT_SV_CN=${CERT_SV_CN:-ldap.example.com}
 
 # NSSDB
 NSSDB_PASSWORD=${NSSDB_PASSWORD:-secretpw}

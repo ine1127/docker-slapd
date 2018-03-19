@@ -276,7 +276,19 @@
         "value": "gothloli.pem"
       },
       {
-        "key": "SSL_HOSTNAME",
+        "key": "CERT_CA_CN",
+        "value": "private.ca.kotono.hayama.lolita"
+      },
+      {
+        "key": "CERT_CA_O",
+        "value": "Reverse Inc."
+      },
+      {
+        "key": "CERT_CA_C",
+        "value": "ST"
+      },
+      {
+        "key": "CERT_SV_CN",
         "value": "black.kotono.hayama.lolita"
       },
       {

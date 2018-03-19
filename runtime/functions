@@ -219,6 +219,10 @@ function __set_slapd_uri() {
 # Generate Certificate
 # Environments:
 #   CA_PEM_FILE
+#   CERT_CA_CN
+#   CERT_CA_O
+#   CERT_CA_C
+#   CERT_SV_CN
 #   CONST_LDAP_CERTS_DIR
 #   CONST_LDAP_NSSDB_NOISE
 #   CONST_LDAP_NSSDB_PASS
@@ -228,7 +232,6 @@ function __set_slapd_uri() {
 #   NSSDB_PASSWORD
 #   NSSDB_PREFIX
 #   SERVER_PEM_FILE
-#   SSL_HOSTNAME
 # Globals:
 #   None
 # Arguments:
@@ -274,7 +277,7 @@ function __gencert_selfsigned() {
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -z "${CONST_LDAP_NSSDB_NOISE}" \
       -n "${NSSDB_CACERT_NAME}"      \
-      -s "CN=CAcert"           \
+      -s "CN=${CERT_CA_CN}, O=${CERT_CA_O}, C=${CERT_CA_C}" \
       -t "CT,,"                \
       -k "rsa"                 \
       -Z "SHA512"              \
@@ -290,7 +293,7 @@ function __gencert_selfsigned() {
 
   local _cert_status="$?"
 
-  if  [ "${_cert_status}" -ne 0 ]; then
+  if [ "${_cert_status}" -ne 0 ]; then
     # Create New Certificate Signed CA
     certutil -S                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
@@ -298,13 +301,13 @@ function __gencert_selfsigned() {
       -z "${CONST_LDAP_NSSDB_NOISE}" \
       -c "${NSSDB_CACERT_NAME}"      \
       -n "${NSSDB_CERT_NAME}"  \
-      -s "CN=${SSL_HOSTNAME}"  \
+      -s "CN=${CERT_SV_CN}"    \
       -t ",,"                  \
       -k "rsa"                 \
       -Z "SHA512"              \
       -g "4096"                \
       -v "120"                 \
-      -8 "${SSL_HOSTNAME},localhost,localhost.localdomain" \
+      -8 "${CERT_SV_CN},localhost,localhost.localdomain" \
       ${_dbfile_prefix}
   fi
 

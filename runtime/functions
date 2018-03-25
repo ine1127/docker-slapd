@@ -232,7 +232,7 @@ function __set_slapd_uri() {
 #   NSSDB_PREFIX
 #   SERVER_PEM_FILE
 # Globals:
-#   None
+#   _DBFILE_PREFIX
 # Arguments:
 #   None
 # Returns:
@@ -240,8 +240,7 @@ function __set_slapd_uri() {
 ##########################################################
 function __gencert_selfsigned() {
   if [ ! -z "${NSSDB_PREFIX}" ]; then
-    local _dbfile_prefix
-    readonly _dbfile_prefix="-P ${NSSDB_PREFIX}"
+    readonly _DBFILE_PREFIX="-P ${NSSDB_PREFIX}"
   fi
 
   # Create noise File
@@ -255,16 +254,16 @@ function __gencert_selfsigned() {
      [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}cert8.db" ]; then
 
     # Create New Key Databases
-    certutil -N   \
-      -d "${CONST_LDAP_CERTS_DIR}"   \
-      -f "${CONST_LDAP_NSSDB_PASS}"  \
-      ${_dbfile_prefix}
+    certutil -N \
+      -d "${CONST_LDAP_CERTS_DIR}"  \
+      -f "${CONST_LDAP_NSSDB_PASS}" \
+         "${_DBFILE_PREFIX}"
   fi
 
   certutil -L \
     -d "${CONST_LDAP_CERTS_DIR}" \
     -n "${NSSDB_CACERT_NAME}"    \
-       ${_dbfile_prefix} \
+       "${_DBFILE_PREFIX}"       \
     > /dev/null 2>&1
 
   local _cert_status="$?"
@@ -282,12 +281,13 @@ function __gencert_selfsigned() {
       -Z "SHA512"              \
       -g "4096"                \
       -v "120"                 \
-      ${_dbfile_prefix}
+         "${_DBFILE_PREFIX}"
   fi
 
   certutil -L \
     -d "${CONST_LDAP_CERTS_DIR}" \
     -n "${NSSDB_CERT_NAME}"      \
+       "${_DBFILE_PREFIX}"       \
     > /dev/null 2>&1
 
   local _cert_status="$?"
@@ -307,7 +307,7 @@ function __gencert_selfsigned() {
       -g "4096"                \
       -v "120"                 \
       -8 "${CERT_SV_CN},localhost,localhost.localdomain" \
-      ${_dbfile_prefix}
+         "${_DBFILE_PREFIX}"
   fi
 
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}" ]; then
@@ -315,7 +315,7 @@ function __gencert_selfsigned() {
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -n "${NSSDB_CACERT_NAME}"      \
-      ${_dbfile_prefix}              \
+         "${_DBFILE_PREFIX}"         \
       -a > "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}"
   fi
 
@@ -324,7 +324,7 @@ function __gencert_selfsigned() {
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -n "${NSSDB_CERT_NAME}"        \
-      ${_dbfile_prefix}              \
+         "${_DBFILE_PREFIX}"         \
       -a > "${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}"
   fi
 }

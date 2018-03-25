@@ -123,10 +123,6 @@
         "value": "/home/ldap/openldap/dbdata"
       },
       {
-        "key": "CONST_LDAP_NSSDB_SECMOD",
-        "value": "/home/ldap/openldap/certs/secmod.db"
-      },
-      {
         "key": "CONST_LDAP_NSSDB_NOISE",
         "value": "/home/ldap/openldap/certs/noise"
       },

@@ -113,10 +113,25 @@ if [ $# -ge 1 ]; then
       __container_build  
     ;;
     rebuild )
-      __image_remove
+      _IMAGE_ID_BEFORE=$( \
+        docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
+          | grep ${_IMAGE_NAME} \
+          | awk '{print $1}'
+      )
       shift 1
       _ADD_DOCKER_OPTS=($@)
       __container_build
+
+      _IMAGE_ID_AFTER=$( \
+        docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
+          | grep ${_IMAGE_NAME} \
+          | awk '{print $1}'
+      )
+      if [ "${_IMAGE_ID_BEFORE}" != "${_IMAGE_ID_AFTER}" ]; then
+        if [ ! -z "${_IMAGE_ID_BEFORE}" ]; then
+          __echo_exec docker image rm ${_IMAGE_ID_BEFORE}
+        fi
+      fi
     ;;
     start )
       __container_start

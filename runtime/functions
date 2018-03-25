@@ -2,7 +2,7 @@
 #
 # functions for entrypoint.sh
 
-source ${CONST_LDAP_RUNTIME_DIR}/environments
+source "${CONST_LDAP_RUNTIME_DIR}"/environments
 
 trap 'exit 1' 1 2 3 15
 
@@ -19,8 +19,8 @@ trap 'exit 1' 1 2 3 15
 #   None
 ##########################################################
 function __slapd_load_domain() {
-  _LDAP_DOMAIN_DN=$(echo dc=${LDAP_DOMAIN} | sed -e 's/\./,dc=/g')
-  _LDAP_DOMAIN_RDN=$(echo ${LDAP_DOMAIN} | awk -F "." '{print $1}')
+  _LDAP_DOMAIN_DN=$(echo dc="${LDAP_DOMAIN}" | sed -e 's/\./,dc=/g')
+  _LDAP_DOMAIN_RDN=$(echo "${LDAP_DOMAIN}" | awk -F "." '{print $1}')
 }
 
 ##########################################################
@@ -94,15 +94,15 @@ function __genldif_deploy() {
 
   local _deploy_dir _ldap_manager_crypt_pass
   _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s "${LDAP_MANAGER_PASS}")
-  _deploy_dir=$(mktemp -d -p ${CONST_LDAP_WORK_DIR} --suffix="_${_deploy_type}")
+  _deploy_dir=$(mktemp -d -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_deploy_type}")
 
   local _ldif_file _deploy_file _rmline _emline
   ls "${_read_dir}" \
     | grep ".*.ldif" \
     | while read _ldif_file; do
-    _deploy_file=$(mktemp -p ${_deploy_dir} --suffix="_${_ldif_file}")
+    _deploy_file=$(mktemp -p "${_deploy_dir}" --suffix="_${_ldif_file}")
 
-    cat "${_read_dir}/${_ldif_file}" | while read _rmline; do
+    cat "${_read_dir}"/"${_ldif_file}" | while read _rmline; do
       _emline=$(__em_from_rm "${_rmline}")
       eval echo "${_emline}" >> "${_deploy_file}"
     done
@@ -137,11 +137,11 @@ function __genldif_integrate() {
   fi
 
   for _target_file in ${_set_args}; do
-    ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
+    ls "${CONST_LDAP_WORK_DIR}"/"${_deployed_dir}" \
       | sort -n -t "_" -k 2             \
       | grep "tmp.*${_target_file}" \
       | while read _ldif_file; do
-      cat "${CONST_LDAP_WORK_DIR}/${_deployed_dir}/${_ldif_file}" >> "${_integrate_file}"
+      cat "${CONST_LDAP_WORK_DIR}"/"${_deployed_dir}"/"${_ldif_file}" >> "${_integrate_file}"
       echo "" >> "${_integrate_file}"
     done
   done
@@ -169,15 +169,15 @@ function __join_file() {
   _found_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_find_dir}")
 
   if [ ! -z ${_found_dir} ]; then
-    _join_src_file=$(ls "${CONST_LDAP_WORK_DIR}/${_found_dir}" | grep ${_src_file})
-    _join_add_file=$(ls "${CONST_LDAP_WORK_DIR}/${_found_dir}" | grep ${_add_file})
-    _result_file=$(mktemp -p ${CONST_LDAP_WORK_DIR})
-    cat "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_src_file}" \
-        "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_add_file}" \
+    _join_src_file=$(ls "${CONST_LDAP_WORK_DIR}"/"${_found_dir}" | grep "${_src_file}")
+    _join_add_file=$(ls "${CONST_LDAP_WORK_DIR}"/"${_found_dir}" | grep "${_add_file}")
+    _result_file=$(mktemp -p "${CONST_LDAP_WORK_DIR}")
+    cat "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_src_file}" \
+        "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_add_file}" \
       > "${_result_file}"
 
-    mv "${_result_file}" "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_src_file}"
-    rm "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_add_file}"
+    mv "${_result_file}" "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_src_file}"
+    rm "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_add_file}"
   fi
 }
 
@@ -398,7 +398,7 @@ function __slapd_deploy() {
   fi
 
   __genldif_integrate config 10-global.ldif 20-schema.ldif 30-frontend.ldif 40-config.ldif 50-monitor.ldif
-  __genldif_integrate database ${_USE_DATABASE}
+  __genldif_integrate database "${_USE_DATABASE}"
   __genldif_integrate entry
 
   __set_slapd_uri
@@ -484,7 +484,7 @@ function __slapd_configtest() {
 #   None
 ##########################################################
 function __slapd_cleanup() {
-  rm -rf ${CONST_LDAP_WORK_DIR}/tmp.*
+  rm -rf "${CONST_LDAP_WORK_DIR}"/tmp.*
 }
 
 ##########################################################
@@ -554,7 +554,7 @@ function __slapd_call_pid() {
     _PID=$(cat "${_PID_FILE}")
   fi
 
-  _PID=${_PID:-noproc}
+  _PID="${_PID:-noproc}"
 }
 
 ##########################################################
@@ -599,8 +599,8 @@ function __slapd_stop() {
   __slapd_call_pid
 
   if [ "${_PID}" != "noproc" ]; then
-    kill -INT ${_PID}
-    rm ${_PID_FILE}
+    kill -INT "${_PID}"
+    rm "${_PID_FILE}"
   fi
 }
 

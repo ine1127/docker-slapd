@@ -448,26 +448,65 @@ function __slapd_install() {
 }
 
 ##########################################################
-# slapd config test in ${CONST_LDAP_CONFIG_DIR}
+# check exist cert and slapd config test
 # Environments:
+#   CONST_LDAP_CERTS_DIR
 #   CONST_LDAP_CONFIG_DIR
+#   NSSDB_CACERT_NAME
+#   NSSDB_CERT_NAME
+#   SLAPD_LDAPS
 # Globals:
-#   None
+#   _DBFILE_PREFIX
 # Arguments:
 #   None
 # Returns:
 #   None
 ##########################################################
-function __slapd_configtest() {
-  slaptest -F ${CONST_LDAP_CONFIG_DIR} -Q 2> /dev/null
-  local _test_status=$?
+function __slapd_test() {
+  if [ "${SLAPD_LDAPS}" = "yes" ]; then
+    certutil -L \
+      -d "${CONST_LDAP_CERTS_DIR}" \
+      -n "${NSSDB_CACERT_NAME}"    \
+         "${_DBFILE_PREFIX}"       \
+      > /dev/null 2>&1
+    local _cacert_status="$?"
 
-  if [ "${_test_status}" -eq "0" ]; then
-    return ${_test_status}
-  else
+    certutil -L \
+      -d "${CONST_LDAP_CERTS_DIR}" \
+      -n "${NSSDB_CERT_NAME}"      \
+         "${_DBFILE_PREFIX}"       \
+      > /dev/null 2>&1
+    local _svcert_status="$?"
+  fi
+
+  slaptest -F "${CONST_LDAP_CONFIG_DIR}" -Q 2> /dev/null
+  local _slapd_status="$?"
+
+  if [ "${_cacert_status:-0}" -ne "0" ]; then
+    echo -en "[\e[31m Error\e[m ] " >&2
+    certutil -L \
+      -d "${CONST_LDAP_CERTS_DIR}" \
+      -n "${NSSDB_CACERT_NAME}"      \
+         "${_DBFILE_PREFIX}"
+
+    exit "${_cacert_status}"
+  fi
+
+  if [ "${_svcert_status:-0}" -ne "0" ]; then
+    echo -en "[\e[31m Error\e[m ] " >&2
+    certutil -L \
+      -d "${CONST_LDAP_CERTS_DIR}" \
+      -n "${NSSDB_CERT_NAME}"    \
+         "${_DBFILE_PREFIX}"
+
+    exit "${_svcert_status}"
+  fi
+
+  if [ "${_slapd_status}" -ne "0" ]; then
     echo -e "[\e[31m Error\e[m ] Failed to slapd config test" >&2
-    slaptest -F ${CONST_LDAP_CONFIG_DIR} -d 4
-    exit ${_test_status}
+    slaptest -F "${CONST_LDAP_CONFIG_DIR}" -d 4
+
+    exit "${_slapd_status}"
   fi
 }
 

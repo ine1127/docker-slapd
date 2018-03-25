@@ -45,7 +45,7 @@ if [ ! -z $1 ]; then
       __slapd_load_domain
       __slapd_deploy
       __slapd_install
-      __slapd_configtest
+      __slapd_test
       __slapd_cleanup
 
       case $1 in

@@ -4,7 +4,7 @@ services:
   docker-slapd:
     container_name: docker-slapd
     restart: always
-    image: octbr.ine/docker-slapd:0.4.4
+    image: octbr.ine/docker-slapd:0.4.5
     environment: 
     - LDAP_DOMAIN=
     - LDAP_ORGNAME=

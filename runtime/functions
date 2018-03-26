@@ -2,7 +2,7 @@
 #
 # functions for entrypoint.sh
 
-source "${CONST_LDAP_RUNTIME_DIR}"/environments
+source "${CONST_LDAP_RUNTIME_DIR}/environments"
 
 trap 'exit 1' 1 2 3 15
 
@@ -19,8 +19,8 @@ trap 'exit 1' 1 2 3 15
 #   None
 ##########################################################
 function __slapd_load_domain() {
-  _LDAP_DOMAIN_DN=$(echo dc="${LDAP_DOMAIN}" | sed -e 's/\./,dc=/g')
-  _LDAP_DOMAIN_RDN=$(echo "${LDAP_DOMAIN}" | awk -F "." '{print $1}')
+  readonly _LDAP_DOMAIN_DN="$(echo dc="${LDAP_DOMAIN}" | sed -e 's/\./,dc=/g')"
+  readonly _LDAP_DOMAIN_RDN="$(echo "${LDAP_DOMAIN}" | awk -F "." '{print $1}')"
 }
 
 ##########################################################
@@ -93,17 +93,17 @@ function __genldif_deploy() {
   esac
 
   local _deploy_dir _ldap_manager_crypt_pass
-  _ldap_manager_crypt_pass=$(/usr/sbin/slappasswd -s "${LDAP_MANAGER_PASS}")
-  _deploy_dir=$(mktemp -d -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_deploy_type}")
+  _ldap_manager_crypt_pass="$(/usr/sbin/slappasswd -s "${LDAP_MANAGER_PASS}")"
+  _deploy_dir="$(mktemp -d -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_deploy_type}")"
 
   local _ldif_file _deploy_file _rmline _emline
   ls "${_read_dir}" \
     | grep ".*.ldif" \
     | while read _ldif_file; do
-    _deploy_file=$(mktemp -p "${_deploy_dir}" --suffix="_${_ldif_file}")
+    _deploy_file="$(mktemp -p "${_deploy_dir}" --suffix="_${_ldif_file}")"
 
-    cat "${_read_dir}"/"${_ldif_file}" | while read _rmline; do
-      _emline=$(__em_from_rm "${_rmline}")
+    cat "${_read_dir}/${_ldif_file}" | while read _rmline; do
+      _emline="$(__em_from_rm "${_rmline}")"
       eval echo "${_emline}" >> "${_deploy_file}"
     done
   done
@@ -125,8 +125,8 @@ function __genldif_integrate() {
   local _integrate_type="$1"
   local _deployed_dir _integrate_file _ldif_file _target_file
 
-  _deployed_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_integrate_type}")
-  _integrate_file=$(mktemp -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_integrate_type}.ldif")
+  _deployed_dir="$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_integrate_type}")"
+  _integrate_file="$(mktemp -p "${CONST_LDAP_WORK_DIR}" --suffix="_${_integrate_type}.ldif")"
 
   shift 1
   local _set_args="$1"
@@ -137,11 +137,11 @@ function __genldif_integrate() {
   fi
 
   for _target_file in ${_set_args}; do
-    ls "${CONST_LDAP_WORK_DIR}"/"${_deployed_dir}" \
+    ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
       | sort -n -t "_" -k 2             \
       | grep "tmp.*${_target_file}" \
       | while read _ldif_file; do
-      cat "${CONST_LDAP_WORK_DIR}"/"${_deployed_dir}"/"${_ldif_file}" >> "${_integrate_file}"
+      cat "${CONST_LDAP_WORK_DIR}/${_deployed_dir}/${_ldif_file}" >> "${_integrate_file}"
       echo "" >> "${_integrate_file}"
     done
   done
@@ -166,18 +166,18 @@ function __join_file() {
   local _add_file="$3"
   local _found_dir _join_src_file _join_add_file _result_file
 
-  _found_dir=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_find_dir}")
+  _found_dir="$(ls "${CONST_LDAP_WORK_DIR}" | grep "_${_find_dir}")"
 
-  if [ ! -z ${_found_dir} ]; then
-    _join_src_file=$(ls "${CONST_LDAP_WORK_DIR}"/"${_found_dir}" | grep "${_src_file}")
-    _join_add_file=$(ls "${CONST_LDAP_WORK_DIR}"/"${_found_dir}" | grep "${_add_file}")
-    _result_file=$(mktemp -p "${CONST_LDAP_WORK_DIR}")
-    cat "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_src_file}" \
-        "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_add_file}" \
+  if [ ! -z "${_found_dir}" ]; then
+    _join_src_file="$(ls "${CONST_LDAP_WORK_DIR}"/"${_found_dir}" | grep "${_src_file}")"
+    _join_add_file="$(ls "${CONST_LDAP_WORK_DIR}"/"${_found_dir}" | grep "${_add_file}")"
+    _result_file="$(mktemp -p "${CONST_LDAP_WORK_DIR}")"
+    cat "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_src_file}" \
+        "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_add_file}" \
       > "${_result_file}"
 
-    mv "${_result_file}" "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_src_file}"
-    rm "${CONST_LDAP_WORK_DIR}"/"${_found_dir}"/"${_join_add_file}"
+    mv "${_result_file}" "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_src_file}"
+    rm "${CONST_LDAP_WORK_DIR}/${_found_dir}/${_join_add_file}"
   fi
 }
 
@@ -206,7 +206,7 @@ function __set_slapd_uri() {
     # _ucpath = Unicode PATH
     local _acpath _ucpath
     _ucpath="${CONST_LDAP_DATA_DIR}/ldapi"
-    _acpath=$(__ac_from_uc "${_ucpath}")
+    _acpath="$(__ac_from_uc "${_ucpath}")"
     _SLAPD_LDAPI_URI="ldapi://${_acpath}/"
   fi
 
@@ -392,20 +392,21 @@ function __slapd_deploy() {
     __gencert_selfsigned
   fi
 
-  __genldif_integrate config 10-global.ldif 20-schema.ldif 30-frontend.ldif 40-config.ldif 50-monitor.ldif
+  __genldif_integrate config \
+    10-global.ldif 20-schema.ldif 30-frontend.ldif 40-config.ldif 50-monitor.ldif
   __genldif_integrate database "${_USE_DATABASE}"
   __genldif_integrate entry
 
   __set_slapd_uri
 
   local _tmp_config_ldif _tmp_database_ldif _tmp_entry_ldif
-  _tmp_config_ldif=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_config.ldif")
-  _tmp_database_ldif=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_database.ldif")
+  _tmp_config_ldif="$(ls "${CONST_LDAP_WORK_DIR}" | grep "_config.ldif")"
+  _tmp_database_ldif="$(ls "${CONST_LDAP_WORK_DIR}" | grep "_database.ldif")"
   cat "${CONST_LDAP_WORK_DIR}/${_tmp_config_ldif}"   \
       "${CONST_LDAP_WORK_DIR}/${_tmp_database_ldif}" \
     > "${CONST_LDAP_WORK_DIR}/config.ldif"
 
-  _tmp_entry_ldif=$(ls "${CONST_LDAP_WORK_DIR}" | grep "_entry.ldif")
+  _tmp_entry_ldif="$(ls "${CONST_LDAP_WORK_DIR}" | grep "_entry.ldif")"
   cat "${CONST_LDAP_WORK_DIR}/${_tmp_entry_ldif}" \
     > "${CONST_LDAP_WORK_DIR}/entry.ldif"
 }
@@ -479,7 +480,7 @@ function __slapd_test() {
   slaptest -F "${CONST_LDAP_CONFIG_DIR}" -Q 2> /dev/null
   local _slapd_status="$?"
 
-  if [ "${_cacert_status:-0}" -ne "0" ]; then
+  if [ "${_cacert_status:-"0"}" -ne "0" ]; then
     echo -en "[\e[31m Error\e[m ] " >&2
     certutil -L \
       -d "${CONST_LDAP_CERTS_DIR}" \
@@ -489,7 +490,7 @@ function __slapd_test() {
     exit "${_cacert_status}"
   fi
 
-  if [ "${_svcert_status:-0}" -ne "0" ]; then
+  if [ "${_svcert_status:-"0"}" -ne "0" ]; then
     echo -en "[\e[31m Error\e[m ] " >&2
     certutil -L \
       -d "${CONST_LDAP_CERTS_DIR}" \
@@ -519,7 +520,13 @@ function __slapd_test() {
 #   None
 ##########################################################
 function __slapd_cleanup() {
-  rm -rf "${CONST_LDAP_WORK_DIR}"/tmp.*
+  local _tmpfile
+
+  ls "${CONST_LDAP_WORK_DIR}" \
+    | grep "^tmp.*$" \
+    | while read _tmpfile; do
+    rm -rf "$(readlink -f "${_tmpfile}")"
+  done
 }
 
 ##########################################################
@@ -556,7 +563,7 @@ function __slapd_backup() {
          ;;
          bdb )
            db_hotbackup -Dc -h "${CONST_LDAP_DBDATA_DIR}" -b "${CONST_LDAP_BACKUP_DIR}"
-           db_verify -h "${CONST_LDAP_DBDATA_DIR}" $(ls ${CONST_LDAP_BACKUP_DIR}/*.bdb)
+           db_verify -h "${CONST_LDAP_DBDATA_DIR}" "$(ls ${CONST_LDAP_BACKUP_DIR}/*.bdb)"
          ;;
          * )
            echo "${LDAP_DATABASE} is none" >&2
@@ -586,10 +593,10 @@ function __slapd_call_pid() {
   _PID_FILE="${CONST_LDAP_WORK_DIR}/slapd.pid"
 
   if [ -s "${_PID_FILE}" ]; then
-    _PID=$(cat "${_PID_FILE}")
+    _PID="$(cat "${_PID_FILE}")"
   fi
 
-  _PID="${_PID:-noproc}"
+  _PID="${_PID:-"noproc"}"
 }
 
 ##########################################################

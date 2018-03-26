@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ${CONST_LDAP_RUNTIME_DIR}/functions
+source "${CONST_LDAP_RUNTIME_DIR}/functions"
 
 ##########################################################
 # Output script usage
@@ -14,7 +14,7 @@ source ${CONST_LDAP_RUNTIME_DIR}/functions
 #   None
 ##########################################################
 function __usage() {
-  local _script_name=$0
+  local _script_name="$0"
   cat <<EOL
 ${_script_name} is a script for starting slapd service on Docker container
 
@@ -31,13 +31,14 @@ Command:
     exec            execute linux command on Docker container
                     required [arguments]
 
-    ex)
+    exec e.g)
         $ ${_script_name} exec ls -la
 EOL
 }
 
-if [ ! -z $1 ]; then
-  case $1 in
+_ARG="$1"
+if [ ! -z "${_ARG}" ]; then
+  case "${_ARG}" in
     --help|-h|help|--usage|usage )
       __usage
     ;;
@@ -48,7 +49,7 @@ if [ ! -z $1 ]; then
       __slapd_test
       __slapd_cleanup
 
-      case $1 in
+      case "${_ARG}" in
         start )
           __slapd_start
         ;;
@@ -68,7 +69,7 @@ if [ ! -z $1 ]; then
       __slapd_backup dbdata
     ;;
     * )
-      exec $@
+      exec "$@"
     ;;
   esac
 else

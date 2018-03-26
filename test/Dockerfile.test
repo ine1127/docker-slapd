@@ -42,7 +42,7 @@ RUN yum -y install inotify-tools && \
 
 USER ldap
 
-RUN mkdir ${CONST_LDAP_DATA_DIR} && \
+RUN mkdir "${CONST_LDAP_DATA_DIR}" && \
     entrypoint.sh init
 
 ### test mdb

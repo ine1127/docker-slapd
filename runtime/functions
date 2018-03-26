@@ -232,17 +232,13 @@ function __set_slapd_uri() {
 #   NSSDB_PREFIX
 #   SERVER_PEM_FILE
 # Globals:
-#   _DBFILE_PREFIX
+#   None
 # Arguments:
 #   None
 # Returns:
 #   None
 ##########################################################
 function __gencert_selfsigned() {
-  if [ ! -z "${NSSDB_PREFIX}" ]; then
-    readonly _DBFILE_PREFIX="-P ${NSSDB_PREFIX}"
-  fi
-
   # Create noise File
   dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
     > "${CONST_LDAP_NSSDB_NOISE}"
@@ -257,13 +253,13 @@ function __gencert_selfsigned() {
     certutil -N \
       -d "${CONST_LDAP_CERTS_DIR}"  \
       -f "${CONST_LDAP_NSSDB_PASS}" \
-         "${_DBFILE_PREFIX}"
+      -P "${NSSDB_PREFIX}"
   fi
 
   certutil -L \
     -d "${CONST_LDAP_CERTS_DIR}" \
     -n "${NSSDB_CACERT_NAME}"    \
-       "${_DBFILE_PREFIX}"       \
+    -P "${NSSDB_PREFIX}"         \
     > /dev/null 2>&1
 
   local _cert_status="$?"
@@ -281,13 +277,13 @@ function __gencert_selfsigned() {
       -Z "SHA512"              \
       -g "4096"                \
       -v "120"                 \
-         "${_DBFILE_PREFIX}"
+      -P "${NSSDB_PREFIX}"
   fi
 
   certutil -L \
     -d "${CONST_LDAP_CERTS_DIR}" \
     -n "${NSSDB_CERT_NAME}"      \
-       "${_DBFILE_PREFIX}"       \
+    -P "${NSSDB_PREFIX}"         \
     > /dev/null 2>&1
 
   local _cert_status="$?"
@@ -307,7 +303,7 @@ function __gencert_selfsigned() {
       -g "4096"                \
       -v "120"                 \
       -8 "${CERT_SV_CN},localhost,localhost.localdomain" \
-         "${_DBFILE_PREFIX}"
+      -P "${NSSDB_PREFIX}"
   fi
 
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}" ]; then
@@ -315,7 +311,7 @@ function __gencert_selfsigned() {
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -n "${NSSDB_CACERT_NAME}"      \
-         "${_DBFILE_PREFIX}"         \
+      -P "${NSSDB_PREFIX}"           \
       -a > "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}"
   fi
 
@@ -324,7 +320,7 @@ function __gencert_selfsigned() {
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
       -n "${NSSDB_CERT_NAME}"        \
-         "${_DBFILE_PREFIX}"         \
+      -P "${NSSDB_PREFIX}"           \
       -a > "${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}"
   fi
 }
@@ -455,8 +451,9 @@ function __slapd_install() {
 #   NSSDB_CACERT_NAME
 #   NSSDB_CERT_NAME
 #   SLAPD_LDAPS
+#   NSSDB_PREFIX
 # Globals:
-#   _DBFILE_PREFIX
+#   None
 # Arguments:
 #   None
 # Returns:
@@ -467,14 +464,14 @@ function __slapd_test() {
     certutil -L \
       -d "${CONST_LDAP_CERTS_DIR}" \
       -n "${NSSDB_CACERT_NAME}"    \
-         "${_DBFILE_PREFIX}"       \
+      -P "${NSSDB_PREFIX}"         \
       > /dev/null 2>&1
     local _cacert_status="$?"
 
     certutil -L \
       -d "${CONST_LDAP_CERTS_DIR}" \
       -n "${NSSDB_CERT_NAME}"      \
-         "${_DBFILE_PREFIX}"       \
+      -P "${NSSDB_PREFIX}"         \
       > /dev/null 2>&1
     local _svcert_status="$?"
   fi
@@ -486,8 +483,8 @@ function __slapd_test() {
     echo -en "[\e[31m Error\e[m ] " >&2
     certutil -L \
       -d "${CONST_LDAP_CERTS_DIR}" \
-      -n "${NSSDB_CACERT_NAME}"      \
-         "${_DBFILE_PREFIX}"
+      -n "${NSSDB_CACERT_NAME}"    \
+      -P "${NSSDB_PREFIX}"         \
 
     exit "${_cacert_status}"
   fi
@@ -496,8 +493,8 @@ function __slapd_test() {
     echo -en "[\e[31m Error\e[m ] " >&2
     certutil -L \
       -d "${CONST_LDAP_CERTS_DIR}" \
-      -n "${NSSDB_CERT_NAME}"    \
-         "${_DBFILE_PREFIX}"
+      -n "${NSSDB_CERT_NAME}"      \
+      -P "${NSSDB_PREFIX}"
 
     exit "${_svcert_status}"
   fi

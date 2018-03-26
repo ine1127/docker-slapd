@@ -525,7 +525,7 @@ function __slapd_cleanup() {
   ls "${CONST_LDAP_WORK_DIR}" \
     | grep "^tmp.*$" \
     | while read _tmpfile; do
-    rm -rf "$(readlink -f "${_tmpfile}")"
+    rm -rf "${CONST_LDAP_WORK_DIR}/${_tmpfile}"
   done
 }
 

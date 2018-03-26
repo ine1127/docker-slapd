@@ -35,13 +35,6 @@ ENV LDAP_DOMAIN="kotono.hayama.lolita" \
     NSSDB_CACERT_NAME="Reverse Certificate" \
     NSSDB_CERT_NAME="GothicLolita"
 
-USER root
-
-RUN yum -y install inotify-tools && \
-    yum clean all
-
-USER ldap
-
 RUN mkdir "${CONST_LDAP_DATA_DIR}" && \
     entrypoint.sh init
 

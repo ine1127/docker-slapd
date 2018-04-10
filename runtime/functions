@@ -82,7 +82,7 @@ function __genldif_deploy() {
       _read_dir="${CONST_LDAP_RUNTIME_DIR}/config"
     ;;
     database )
-      _read_dir="${CONST_LDAP_RUNTIME_DIR}/config/database"
+      _read_dir="${CONST_LDAP_RUNTIME_DIR}/database"
     ;;
     entry )
       _read_dir="${CONST_LDAP_RUNTIME_DIR}/entry"

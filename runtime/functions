@@ -51,7 +51,7 @@ function __em_from_rm() {
 # Arguments:
 #   Unicode Strings
 # Returns:
-#   AACII Strings
+#   ASCII Strings
 ##########################################################
 function __ac_from_uc {
   echo "$1" \

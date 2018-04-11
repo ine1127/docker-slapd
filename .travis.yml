@@ -19,7 +19,6 @@ before_script:
 - docker image build -t ine1127/docker-slapd-test-mdb -f test/Dockerfile.test --target test-mdb .
 - docker image build -t ine1127/docker-slapd-test-bdb -f test/Dockerfile.test --target test-bdb .
 
-
 script:
 - container-structure-test -test.v -image ine1127/docker-slapd test/container-test-prod.json
 - container-structure-test -test.v -image ine1127/docker-slapd-test-base test/container-test-base.json

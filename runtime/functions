@@ -35,7 +35,8 @@ function __slapd_load_domain() {
 #   Strings into processed meta-character
 ##########################################################
 function __em_from_rm() {
-  echo "$1" \
+  local _rmline="$1"
+  echo "${_rmline}" \
     | sed -e 's/\"/\\\"/g'     \
           -e 's/\*/\\\*/g'     \
           -e 's/by /\\  by /g' \
@@ -54,7 +55,8 @@ function __em_from_rm() {
 #   ASCII Strings
 ##########################################################
 function __ac_from_uc {
-  echo "$1" \
+  local _ucpath="$1"
+  echo "${_ucpath}" \
     | sed -e 's@/@%2F@g'
 }
 
@@ -182,6 +184,45 @@ function __join_file() {
 }
 
 ##########################################################
+# Execute commadnby by specific user permission (possible only root)
+# If current user isn't root, execute after $2
+# Environments:
+#   PATH
+# Globals:
+#   None
+# Arguments:
+#   $1 (user)
+#   $2 (command)
+#   after $@ (command options)
+# Returns:
+#   command result
+##########################################################
+function __switch_user() {
+  local _current_user
+  _current_user="$(id -u)"
+
+  if [ "${_current_user}" -ne "0" ]; then
+    shift 1
+    eval "$@"
+  else
+    local _exec_user="$1"
+    local _exec_cmd="$2"
+    shift 2
+
+    local _cmd_path _status
+    echo "${PATH}"  \
+      | tr ':' '\n' \
+      | while read _cmd_path; do
+      if [ -f "${_cmd_path}/${_exec_cmd}" ]; then
+        runuser -m -s "${_cmd_path}/${_exec_cmd}" -- "${_exec_user}" "$@"
+        local _status="$?"
+        break
+      fi
+    done
+  fi
+}
+
+##########################################################
 # Setting slapd URI
 # Environments:
 #   SLDAPD_LDAP
@@ -240,16 +281,20 @@ function __set_slapd_uri() {
 ##########################################################
 function __gencert_selfsigned() {
   # Create noise File
-  dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
-    > "${CONST_LDAP_NSSDB_NOISE}"
+  if [ ! -s "${CONST_LDAP_NSSDB_NOISE}" ]; then
+    dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
+      > "${CONST_LDAP_NSSDB_NOISE}"
+  fi
 
   # Create password File
-  echo "${NSSDB_PASSWORD}" > "${CONST_LDAP_NSSDB_PASS}"
+  if [ ! -s "${CONST_LDAP_NSSDB_PASS}" ]; then
+    echo "${NSSDB_PASSWORD}" \
+      > "${CONST_LDAP_NSSDB_PASS}"
+  fi
 
+  # Create New Key Databases
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}key3.db" ] && \
      [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}cert8.db" ]; then
-
-    # Create New Key Databases
     certutil -N \
       -d "${CONST_LDAP_CERTS_DIR}"  \
       -f "${CONST_LDAP_NSSDB_PASS}" \
@@ -264,8 +309,8 @@ function __gencert_selfsigned() {
 
   local _cert_status="$?"
 
+  # Create New CA Certicicate (Self Signed)
   if [ "${_cert_status}" -ne 0 ]; then
-    # Create New CA Certicicate (Self Signed)
     certutil -S -x                   \
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
@@ -288,8 +333,8 @@ function __gencert_selfsigned() {
 
   local _cert_status="$?"
 
+  # Create New Certificate Signed CA
   if [ "${_cert_status}" -ne 0 ]; then
-    # Create New Certificate Signed CA
     certutil -S                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
       -f "${CONST_LDAP_NSSDB_PASS}"  \
@@ -365,21 +410,11 @@ function __choose_database() {
 #   None
 ##########################################################
 function __slapd_deploy() {
-  if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ]; then
-    mkdir "${CONST_LDAP_BACKUP_DIR}"
-  fi
-
-  if [ ! -d "${CONST_LDAP_CERTS_DIR}" ]; then
-    mkdir "${CONST_LDAP_CERTS_DIR}"
-  fi
-
-  if [ ! -d "${CONST_LDAP_CONFIG_DIR}" ]; then
-    mkdir "${CONST_LDAP_CONFIG_DIR}"
-  fi
-
-  if [ ! -d "${CONST_LDAP_DBDATA_DIR}" ]; then
-    mkdir "${CONST_LDAP_DBDATA_DIR}"
-  fi
+  mkdir "${CONST_LDAP_BACKUP_DIR}" \
+        "${CONST_LDAP_CERTS_DIR}"  \
+        "${CONST_LDAP_CONFIG_DIR}" \
+        "${CONST_LDAP_DBDATA_DIR}" \
+        2> /dev/null
 
   __choose_database
 
@@ -393,7 +428,11 @@ function __slapd_deploy() {
   fi
 
   __genldif_integrate config \
-    10-global.ldif 20-schema.ldif 30-frontend.ldif 40-config.ldif 50-monitor.ldif
+    10-global.ldif \
+    20-schema.ldif \
+    30-frontend.ldif \
+    40-config.ldif \
+    50-monitor.ldif
   __genldif_integrate database "${_USE_DATABASE}"
   __genldif_integrate entry
 
@@ -426,7 +465,8 @@ function __slapd_deploy() {
 ##########################################################
 function __slapd_install() {
   if [ ! -e "${CONST_LDAP_CONFIG_DIR}/.slapd_installed" ]; then
-    slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
+    __switch_user "${CONST_LDAP_USER}" \
+      slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
       -n 0 -l "${CONST_LDAP_WORK_DIR}/config.ldif"
 
     cat "${CONST_LDAP_WORK_DIR}/config.ldif" \
@@ -434,7 +474,8 @@ function __slapd_install() {
       | awk '{print $2}' \
       > "${CONST_LDAP_CONFIG_DIR}/.slapd_installed"
 
-    slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
+    __switch_user "${CONST_LDAP_USER}" \
+      slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
       -n 2 -l "${CONST_LDAP_WORK_DIR}/entry.ldif"
 
     cat "${CONST_LDAP_WORK_DIR}/entry.ldif" \
@@ -544,12 +585,9 @@ function __slapd_cleanup() {
 #   None
 ##########################################################
 function __slapd_backup() {
-  if [ ! -z "$1" ]; then
-    if [ ! -d "${CONST_LDAP_BACKUP_DIR}" ]; then
-      mkdir "${CONST_LDAP_BACKUP_DIR}"
-    fi
-
-    case "$1" in
+  local _backup_type="$1"
+  if [ ! -z "${_backup_type}" ]; then
+    case "${_backup_type}" in
       config )
         slapcat -F "${CONST_LDAP_CONFIG_DIR}" -n 0 \
           -l "${CONST_LDAP_BACKUP_DIR}/slapd_config.ldif"
@@ -571,7 +609,7 @@ function __slapd_backup() {
         esac
       ;;
       * )
-        echo "Invalid argument $1" >&2
+        echo "Invalid argument ${_backup_type}" >&2
       ;;
     esac
   fi

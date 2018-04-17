@@ -19,16 +19,16 @@ user@linux:~$ ./docker-service.sh build
 or
 
 ```shell-session
-docker build --tag=ine1127/docker-slapd:0.4.5 \
-             --build-arg http_proxy=${http_proxy} \
-             --build-arg HTTP_PROXY=${HTTP_PROXY} \
-             --build-arg https_proxy=${https_proxy} \
-             --build-arg HTTPS_PROXY=${HTTPS_PROXY} \
-             --build-arg ftp_proxy=${ftp_proxy} \
-             --build-arg FTP_PROXY=${FTP_PROXY} \
-             --build-arg no_proxy=${no_proxy} \
-             --build-arg NO_PROXY=${NO_PROXY} \
-             .
+user@linux:$ docker build --tag=ine1127/docker-slapd:0.4.6 \
+               --build-arg http_proxy=${http_proxy} \
+               --build-arg HTTP_PROXY=${HTTP_PROXY} \
+               --build-arg https_proxy=${https_proxy} \
+               --build-arg HTTPS_PROXY=${HTTPS_PROXY} \
+               --build-arg ftp_proxy=${ftp_proxy} \
+               --build-arg FTP_PROXY=${FTP_PROXY} \
+               --build-arg no_proxy=${no_proxy} \
+               --build-arg NO_PROXY=${NO_PROXY} \
+               .
 ```
 
 # Quick Start
@@ -40,7 +40,7 @@ user@linux:~$ ./docker-service.sh onceboot
 or
 
 ```shell-session
-user@linux:~$ docker run --name docker-slapd --rm ine1127/docker-slapd:0.4.5
+user@linux:~$ docker run --name docker-slapd --rm ine1127/docker-slapd:0.4.6
 ```
 
 # Data Store
@@ -61,7 +61,7 @@ Volumes can be mounted in docker by specifying the `-v` option in the docker run
 ```shell-session
 user@linux:~$ docker run --name docker-slapd --rm \
                 --volume /srv/docker-slapd/openldap:/home/ldap/openldap \
-                ine1127/docker-slapd:0.4.5
+                ine1127/docker-slapd:0.4.6
 ```
 
 # OpenLDAP Parameters

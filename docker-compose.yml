@@ -20,7 +20,7 @@ services:
     - LDAP_DATABASE=
     - LDAP_LOGLEVEL=
 
-    - SLAPD_DEBUG_LEVEL=
+    - SLAPD_DEBUGLEVEL=
     - SLAPD_LDAP=
     - SLAPD_LDAPI=
     - SLAPD_LDAPS=

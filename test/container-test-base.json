@@ -248,7 +248,7 @@
         "value": "513"
       },
       {
-        "key": "SLAPD_DEBUG_LEVEL",
+        "key": "SLAPD_DEBUGLEVEL",
         "value": "3"
       },
       {

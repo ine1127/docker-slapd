@@ -641,7 +641,7 @@ function __slapd_call_pid() {
 # Start slapd
 # Environments:
 #   CONST_LDAP_CONFIG_DIR
-#   SLAPD_DEBUG_LEVEL
+#   SLAPD_DEBUGLEVEL
 # Globals:
 #   _PID
 #   _SLAPD_LDAP_URI
@@ -656,7 +656,7 @@ function __slapd_start() {
   __slapd_call_pid
 
   if [ "${_PID}" = "noproc" ]; then
-    exec /usr/sbin/slapd -d "${SLAPD_DEBUG_LEVEL}" \
+    exec /usr/sbin/slapd -d "${SLAPD_DEBUGLEVEL}" \
       -h "${_SLAPD_LDAP_URI} ${_SLAPD_LDAPI_URI} ${_SLAPD_LDAPS_URI}" \
       -F "${CONST_LDAP_CONFIG_DIR}" \
       -u ldap

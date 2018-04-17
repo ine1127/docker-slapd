@@ -97,3 +97,11 @@ user@linux:~$ vi etc/docker-container.conf
 | `NSSDB_PASSWORD` | `secretpw` | Mozilla NSS Database Password |
 | `NSSDB_CACERT_NAME` | `CA Certificate` | Mozilla NSS CA Certificate Name|
 | `NSSDB_CERT_NAMe` | `OpenLDAP Server` | Mozilla NSS Certificate Name|
+
+# Author
+
+[ine1127](https://twitter.com/i_luv_kneesox)
+
+# License
+
+MIT

@@ -35,3 +35,6 @@ services:
     - NSSDB_PASSWORD=
     - NSSDB_CACERT_NAME=
     - NSSDB_CERT_NAME=
+
+    volumes:
+    - /srv/docker-slapd/openldap

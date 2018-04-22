@@ -410,6 +410,7 @@ function __choose_database() {
 #   None
 ##########################################################
 function __slapd_deploy() {
+  __switch_user "${CONST_LDAP_USER}" \
   mkdir "${CONST_LDAP_BACKUP_DIR}" \
         "${CONST_LDAP_CERTS_DIR}"  \
         "${CONST_LDAP_CONFIG_DIR}" \

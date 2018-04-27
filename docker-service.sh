@@ -34,17 +34,17 @@ function __container_build() {
 function __container_run() {
   local _env_proxy="$( \
     printenv \
-    | grep -i "_proxy=" \
-    | while read -r x
-    do
+      | grep -i "_proxy=" \
+      | while read -r x; do
       echo -n " -e $x"
     done \
   )"
+
   __echo_exec docker container run \
     -it --name "${_CONTAINER_NAME}" \
     --env-file "${_BASE_DIR}/etc/docker-container.conf" \
     "${_env_proxy}" "${_BOOT_STATE:-"-d=false"}" "${_ONCE}" \
-    "${_ADD_DOCKER_OPTS[@]}" "${_IMAGE_NAME}"
+    "${_DOCKER_ARGS}" "${_IMAGE_NAME}" "${_EXEC_CMD}"
 }
 
 function __container_start() {
@@ -104,7 +104,26 @@ if [ "$#" -ge 1 ]; then
       esac
 
       shift 1
-      _ADD_DOCKER_OPTS=("$@")
+      eval "$( \
+        echo "$@" \
+          | awk -F " --exec " '{print "_ARGS1=\""$1"\"\n_ARGS2=\""$2"\""}' \
+          | sed -e '/^$/d' \
+      )"
+
+      if [ -z "${_ARGS2}" ]; then
+        echo "${_ARGS1}" | grep '\--exec' > /dev/null 2>&1
+        local _status="$?"
+
+        if [ "${_status}" -eq "0" ]; then
+          _EXEC_CMD="$(echo "${_ARGS1}" | sed -e 's/--exec //g')"
+        else
+          _DOCKER_ARGS="${_ARGS1}"
+        fi
+      else
+        _DOCKER_ARGS="${_ARGS1}"
+        _EXEC_CMD="${_ARGS2}"
+      fi
+
       __container_run
     ;;
     build )

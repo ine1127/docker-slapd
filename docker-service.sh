@@ -79,115 +79,119 @@ function __container_exec() {
   __echo_exec docker container exec -it "${_CONTAINER_NAME}" "${_EXEC_CMD[@]}"
 }
 
-__load_global_variables
+function main() {
+  __load_global_variables
 
-if [ "$#" -ge 1 ]; then
-  case $1 in
-    boot|boot-[bf]g|onceboot|onceboot-[bf]g )
-      case $1 in 
-        boot|boot-fg )
-          _BOOT_STATE=
-          _ONCE=
-        ;;
-        boot-bg )
-          _BOOT_STATE="-d=true"
-          _ONCE=
-        ;;
-        onceboot|onceboot-fg )
-          _BOOT_STATE=
-          _ONCE="--rm"
-        ;;
-        onceboot-bg )
-          _BOOT_STATE="-d=true"
-          _ONCE="--rm"
-        ;;
-      esac
+  if [ "$#" -ge 1 ]; then
+    case $1 in
+      boot|boot-[bf]g|onceboot|onceboot-[bf]g )
+        case $1 in 
+          boot|boot-fg )
+            _BOOT_STATE=
+            _ONCE=
+          ;;
+          boot-bg )
+            _BOOT_STATE="-d=true"
+            _ONCE=
+          ;;
+          onceboot|onceboot-fg )
+            _BOOT_STATE=
+            _ONCE="--rm"
+          ;;
+          onceboot-bg )
+            _BOOT_STATE="-d=true"
+            _ONCE="--rm"
+          ;;
+        esac
 
-      shift 1
-      eval "$( \
-        echo "$@" \
-          | awk -F " --exec " '{print "_ARGS1=\""$1"\"\n_ARGS2=\""$2"\""}' \
-          | sed -e '/^$/d' \
-      )"
+        shift 1
+        eval "$( \
+          echo "$@" \
+            | awk -F " --exec " '{print "_ARGS1=\""$1"\"\n_ARGS2=\""$2"\""}' \
+            | sed -e '/^$/d' \
+        )"
 
-      if [ -z "${_ARGS2}" ]; then
-        echo "${_ARGS1}" | grep '\--exec' > /dev/null 2>&1
-        local _status="$?"
+        if [ -z "${_ARGS2}" ]; then
+          echo "${_ARGS1}" | grep '\--exec' > /dev/null 2>&1
+          local _status="$?"
 
-        if [ "${_status}" -eq "0" ]; then
-          _EXEC_CMD="$(echo "${_ARGS1}" | sed -e 's/--exec //g')"
+          if [ "${_status}" -eq "0" ]; then
+            _EXEC_CMD="$(echo "${_ARGS1}" | sed -e 's/--exec //g')"
+          else
+            _DOCKER_ARGS="${_ARGS1}"
+          fi
         else
           _DOCKER_ARGS="${_ARGS1}"
+          _EXEC_CMD="${_ARGS2}"
         fi
-      else
-        _DOCKER_ARGS="${_ARGS1}"
-        _EXEC_CMD="${_ARGS2}"
-      fi
 
-      __container_run
-    ;;
-    build )
-      shift 1
-      _ADD_DOCKER_OPTS=("$@")
-      __container_build  
-    ;;
-    rebuild )
-      _IMAGE_ID_BEFORE="$( \
-        docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
-          | grep "${_IMAGE_NAME}" \
-          | awk '{print $1}' \
-      )"
-      shift 1
-      _ADD_DOCKER_OPTS=("$@")
-      __container_build
+        __container_run
+      ;;
+      build )
+        shift 1
+        _ADD_DOCKER_OPTS=("$@")
+        __container_build  
+      ;;
+      rebuild )
+        _IMAGE_ID_BEFORE="$( \
+          docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
+            | grep "${_IMAGE_NAME}" \
+            | awk '{print $1}' \
+        )"
+        shift 1
+        _ADD_DOCKER_OPTS=("$@")
+        __container_build
 
-      _IMAGE_ID_AFTER="$( \
-        docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
-          | grep "${_IMAGE_NAME}" \
-          | awk '{print $1}' \
-      )"
-      if [ "${_IMAGE_ID_BEFORE}" != "${_IMAGE_ID_AFTER}" ]; then
-        if [ ! -z "${_IMAGE_ID_BEFORE}" ]; then
-          __echo_exec docker image rm "${_IMAGE_ID_BEFORE}"
+        _IMAGE_ID_AFTER="$( \
+          docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
+            | grep "${_IMAGE_NAME}" \
+            | awk '{print $1}' \
+        )"
+        if [ "${_IMAGE_ID_BEFORE}" != "${_IMAGE_ID_AFTER}" ]; then
+          if [ ! -z "${_IMAGE_ID_BEFORE}" ]; then
+            __echo_exec docker image rm "${_IMAGE_ID_BEFORE}"
+          fi
         fi
-      fi
-    ;;
-    start )
-      __container_start
-    ;;
-    stop )
-      __container_stop
-    ;;
-    restart )
-      __container_restart
-    ;;
-    enable )
-      __container_enable
-    ;;
-    disable )
-      __container_disable
-    ;;
-    container-rm )
-      __container_remove
-    ;;
-    image-rm )
-      __image_remove
-    ;;
-    purge )
-      __container_remove && \
-      __image_remove
-    ;;
-    login )
-      _EXEC_CMD=("/bin/bash")
-      __container_exec 
-    ;;
-    exec )
-      shift 1
-      _EXEC_CMD=("$@")
-      __container_exec 
-    ;;
-    * )
-      echo "missing operand" >&2
-    ;;
-  esac
-fi
+      ;;
+      start )
+        __container_start
+      ;;
+      stop )
+        __container_stop
+      ;;
+      restart )
+        __container_restart
+      ;;
+      enable )
+        __container_enable
+      ;;
+      disable )
+        __container_disable
+      ;;
+      container-rm )
+        __container_remove
+      ;;
+      image-rm )
+        __image_remove
+      ;;
+      purge )
+        __container_remove && \
+        __image_remove
+      ;;
+      login )
+        _EXEC_CMD=("/bin/bash")
+        __container_exec 
+      ;;
+      exec )
+        shift 1
+        _EXEC_CMD=("$@")
+        __container_exec 
+      ;;
+      * )
+        echo "missing operand" >&2
+      ;;
+    esac
+  fi
+}
+
+main "$@"

@@ -2,7 +2,7 @@ version: '2'
 
 services:
   docker-slapd:
-    container_name: docker-slapd
+    container_name: slapd
     restart: always
     image: octbr.ine/docker-slapd:0.4.6
     environment: 
@@ -37,4 +37,4 @@ services:
     - NSSDB_CERT_NAME=
 
     volumes:
-    - /srv/docker-slapd/openldap
+    - /srv/slapd/openldap

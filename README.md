@@ -19,7 +19,7 @@ user@linux:~$ ./docker-service.sh build
 or
 
 ```shell-session
-user@linux:$ docker build --tag=ine1127/docker-slapd:0.4.6 \
+user@linux:$ docker build --tag=ine1127/slapd:0.4.6 \
                --build-arg http_proxy=${http_proxy} \
                --build-arg HTTP_PROXY=${HTTP_PROXY} \
                --build-arg https_proxy=${https_proxy} \
@@ -40,7 +40,7 @@ user@linux:~$ ./docker-service.sh onceboot
 or
 
 ```shell-session
-user@linux:~$ docker run --name docker-slapd --rm ine1127/docker-slapd:0.4.6
+user@linux:~$ docker run --name slapd --rm ine1127/slapd:0.4.6
 ```
 
 # Data Store
@@ -52,16 +52,16 @@ Mount volume
 Create mount directory
 
 ```
-user@linux$ sudo mkdir -p /srv/docker-slapd/openldap
-user@linux$ sudo chown 55:55 /srv/docker-slapd/openldap
+user@linux$ sudo mkdir -p /srv/slapd/openldap
+user@linux$ sudo chown 55:55 /srv/slapd/openldap
 ```
 
 Volumes can be mounted in docker by specifying the `-v` option in the docker run command.
 
 ```shell-session
-user@linux:~$ docker run --name docker-slapd --rm \
-                --volume /srv/docker-slapd/openldap:/home/ldap/openldap \
-                ine1127/docker-slapd:0.4.6
+user@linux:~$ docker run --name slapd --rm \
+                --volume /srv/slapd/openldap:/home/ldap/openldap \
+                ine1127/slapd:0.4.6
 ```
 
 # OpenLDAP Parameters

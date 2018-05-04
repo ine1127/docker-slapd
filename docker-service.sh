@@ -43,6 +43,7 @@ function __container_run() {
   __echo_exec docker container run \
     -it --name "${_CONTAINER_NAME}" \
     --env-file "${_BASE_DIR}/etc/docker-container.conf" \
+    -p 389:10389 -p 636:10636 \
     "${_env_proxy}" "${_BOOT_STATE:-"-d=false"}" "${_ONCE}" \
     "${_DOCKER_ARGS}" "${_IMAGE_NAME}" "${_EXEC_CMD}"
 }

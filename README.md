@@ -61,6 +61,7 @@ Volumes can be mounted in docker by specifying the `-v` option in the docker run
 ```shell-session
 user@linux:~$ docker run --name slapd --rm \
                 --volume /srv/slapd/openldap:/home/ldap/openldap \
+                -p 389:10389 -p 636:10636 \
                 ine1127/slapd:0.4.6
 ```
 

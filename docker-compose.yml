@@ -36,5 +36,9 @@ services:
     - NSSDB_CACERT_NAME=
     - NSSDB_CERT_NAME=
 
+    ports:
+    - 389:10389
+    - 636:10636
+
     volumes:
     - /srv/slapd/openldap

@@ -138,7 +138,9 @@ function __genldif_integrate() {
     _set_args=".ldif"
   fi
 
-  for _target_file in ${_set_args}; do
+  echo "${_set_args}" \
+    | xargs -n 1 \
+    | while read _target_file; do
     ls "${CONST_LDAP_WORK_DIR}/${_deployed_dir}" \
       | sort -n -t "_" -k 2             \
       | grep "tmp.*${_target_file}" \
@@ -265,8 +267,6 @@ function __set_slapd_uri() {
 #   CERT_CA_C
 #   CERT_SV_CN
 #   CONST_LDAP_CERTS_DIR
-#   CONST_LDAP_NSSDB_NOISE
-#   CONST_LDAP_NSSDB_PASS
 #   NSSDB_CACERT_NAME
 #   NSSDB_CERT_NAME
 #   NSSDB_PASSWORD
@@ -281,15 +281,19 @@ function __set_slapd_uri() {
 ##########################################################
 function __gencert_selfsigned() {
   # Create noise File
-  if [ ! -s "${CONST_LDAP_NSSDB_NOISE}" ]; then
+  local _nssdb_noise_file
+  _nssdb_noise_file="${CONST_LDAP_CERTS_DIR}/noise"
+  if [ ! -s "${_nssdb_noise_file}" ]; then
     dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64 \
-      > "${CONST_LDAP_NSSDB_NOISE}"
+      > "${CONST_LDAP_CERTS_DIR}/noise"
   fi
 
   # Create password File
-  if [ ! -s "${CONST_LDAP_NSSDB_PASS}" ]; then
+  local _nssdb_pass_file
+  _nssdb_pass_file="${CONST_LDAP_CERTS_DIR}/password"
+  if [ ! -s "${_nssdb_pass_file}" ]; then
     echo "${NSSDB_PASSWORD}" \
-      > "${CONST_LDAP_NSSDB_PASS}"
+      > "${_nssdb_pass_file}"
   fi
 
   # Create New Key Databases
@@ -297,7 +301,7 @@ function __gencert_selfsigned() {
      [ ! -s "${CONST_LDAP_CERTS_DIR}/${NSSDB_PREFIX}cert8.db" ]; then
     certutil -N \
       -d "${CONST_LDAP_CERTS_DIR}"  \
-      -f "${CONST_LDAP_NSSDB_PASS}" \
+      -f "${_nssdb_pass_file}"      \
       -P "${NSSDB_PREFIX}"
   fi
 
@@ -313,8 +317,8 @@ function __gencert_selfsigned() {
   if [ "${_cert_status}" -ne 0 ]; then
     certutil -S -x                   \
       -d "${CONST_LDAP_CERTS_DIR}"   \
-      -f "${CONST_LDAP_NSSDB_PASS}"  \
-      -z "${CONST_LDAP_NSSDB_NOISE}" \
+      -f "${_nssdb_pass_file}"       \
+      -z "${_nssdb_noise_file}"      \
       -n "${NSSDB_CACERT_NAME}"      \
       -s "CN=${CERT_CA_CN}, O=${CERT_CA_O}, C=${CERT_CA_C}" \
       -t "CT,,"                \
@@ -337,11 +341,11 @@ function __gencert_selfsigned() {
   if [ "${_cert_status}" -ne 0 ]; then
     certutil -S                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
-      -f "${CONST_LDAP_NSSDB_PASS}"  \
-      -z "${CONST_LDAP_NSSDB_NOISE}" \
+      -f "${_nssdb_pass_file}"       \
+      -z "${_nssdb_noise_file}"      \
       -c "${NSSDB_CACERT_NAME}"      \
-      -n "${NSSDB_CERT_NAME}"  \
-      -s "CN=${CERT_SV_CN}"    \
+      -n "${NSSDB_CERT_NAME}"        \
+      -s "CN=${CERT_SV_CN}"          \
       -t ",,"                  \
       -k "rsa"                 \
       -Z "SHA512"              \
@@ -354,7 +358,7 @@ function __gencert_selfsigned() {
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}" ]; then
     certutil -L                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
-      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      -f "${_nssdb_pass_file}"  \
       -n "${NSSDB_CACERT_NAME}"      \
       -P "${NSSDB_PREFIX}"           \
       -a > "${CONST_LDAP_CERTS_DIR}/${CA_PEM_FILE}"
@@ -363,7 +367,7 @@ function __gencert_selfsigned() {
   if [ ! -s "${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}" ]; then
     certutil -L                      \
       -d "${CONST_LDAP_CERTS_DIR}"   \
-      -f "${CONST_LDAP_NSSDB_PASS}"  \
+      -f "${_nssdb_pass_file}"  \
       -n "${NSSDB_CERT_NAME}"        \
       -P "${NSSDB_PREFIX}"           \
       -a > "${CONST_LDAP_CERTS_DIR}/${SERVER_PEM_FILE}"

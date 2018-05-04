@@ -121,14 +121,6 @@
       {
         "key": "CONST_LDAP_DBDATA_DIR",
         "value": "/home/ldap/openldap/dbdata"
-      },
-      {
-        "key": "CONST_LDAP_NSSDB_NOISE",
-        "value": "/home/ldap/openldap/certs/noise"
-      },
-      {
-        "key": "CONST_LDAP_NSSDB_PASS",
-        "value": "/home/ldap/openldap/certs/password"
       }
     ],
     "exposedPorts": [

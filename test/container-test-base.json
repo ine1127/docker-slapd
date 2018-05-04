@@ -200,14 +200,6 @@
         "value": "/home/ldap/openldap-test/dbdata"
       },
       {
-        "key": "CONST_LDAP_NSSDB_NOISE",
-        "value": "/home/ldap/openldap-test/certs/noise"
-      },
-      {
-        "key": "CONST_LDAP_NSSDB_PASS",
-        "value": "/home/ldap/openldap-test/certs/password"
-      },
-      {
         "key": "LDAP_DOMAIN",
         "value": "kotono.hayama.lolita"
       },

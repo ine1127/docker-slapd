@@ -112,7 +112,10 @@ function main() {
             | sed -e '/^$/d' \
         )"
 
-        if [ -z "${_ARGS2}" ]; then
+        if [ ! -z "${_ARGS2}" ]; then
+          _DOCKER_ARGS="${_ARGS1}"
+          _EXEC_CMD="${_ARGS2}"
+        else
           echo "${_ARGS1}" | grep '\--exec' > /dev/null 2>&1
           local _status="$?"
 
@@ -121,9 +124,6 @@ function main() {
           else
             _DOCKER_ARGS="${_ARGS1}"
           fi
-        else
-          _DOCKER_ARGS="${_ARGS1}"
-          _EXEC_CMD="${_ARGS2}"
         fi
 
         __container_run

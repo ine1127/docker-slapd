@@ -73,27 +73,6 @@
   ],
 
   "metadataTest": {
-    "env": [
-      {
-        "key": "CONST_LDAP_USER",
-        "value": "ldap"
-      },
-      {
-        "key": "CONST_LDAP_GROUP",
-        "value": "ldap"
-      },
-      {
-        "key": "CONST_LDAP_UID",
-        "value": "55"
-      },
-      {
-        "key": "CONST_LDAP_GID",
-        "value": "55"
-      },
-      {
-        "key": "CONST_LDAP_HOME_DIR",
-        "value": "/home/ldap"
-      },
       {
         "key": "CONST_LDAP_DATA_DIR",
         "value": "/home/ldap/openldap"

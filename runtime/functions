@@ -414,7 +414,7 @@ function __choose_database() {
 #   None
 ##########################################################
 function __slapd_deploy() {
-  __switch_user "${CONST_LDAP_USER}" \
+  __switch_user "${LDAP_USR}" \
   mkdir "${CONST_LDAP_BACKUP_DIR}" \
         "${CONST_LDAP_CERTS_DIR}"  \
         "${CONST_LDAP_CONFIG_DIR}" \
@@ -470,7 +470,7 @@ function __slapd_deploy() {
 ##########################################################
 function __slapd_install() {
   if [ ! -e "${CONST_LDAP_CONFIG_DIR}/.slapd_installed" ]; then
-    __switch_user "${CONST_LDAP_USER}" \
+    __switch_user "${LDAP_USR}" \
       slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
       -n 0 -l "${CONST_LDAP_WORK_DIR}/config.ldif"
 
@@ -479,7 +479,7 @@ function __slapd_install() {
       | awk '{print $2}' \
       > "${CONST_LDAP_CONFIG_DIR}/.slapd_installed"
 
-    __switch_user "${CONST_LDAP_USER}" \
+    __switch_user "${LDAP_USR}" \
       slapadd -v -F "${CONST_LDAP_CONFIG_DIR}" \
       -n 2 -l "${CONST_LDAP_WORK_DIR}/entry.ldif"
 

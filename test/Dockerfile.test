@@ -2,7 +2,13 @@ FROM ine1127/docker-slapd AS test-base
 LABEL maintainer "ine1127"
 LABEL use "Prebuild for test"
 
-ENV CONST_LDAP_DATA_DIR="${CONST_LDAP_HOME_DIR}/openldap-test"
+ARG LDAP_HOME_DIR="/home/ldap"
+ARG LDAP_USR="ldap"
+ARG LDAP_GRP="ldap"
+ARG LDAP_UID="55"
+ARG LDAP_GID="55"
+
+ENV CONST_LDAP_DATA_DIR="${LDAP_HOME_DIR}/openldap-test"
 ENV CONST_LDAP_BACKUP_DIR="${CONST_LDAP_DATA_DIR}/backup" \
     CONST_LDAP_CERTS_DIR="${CONST_LDAP_DATA_DIR}/certs" \
     CONST_LDAP_CONFIG_DIR="${CONST_LDAP_DATA_DIR}/slapd.d" \

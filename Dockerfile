@@ -25,7 +25,6 @@ RUN groupadd \
       -s "/bin/bash" \
       -c "LDAP User" \
          "${CONST_LDAP_USER}" && \
-
     yum -y update && \
     yum -y install \
       openldap-clients \
@@ -33,7 +32,6 @@ RUN groupadd \
       epel-release && \
     yum -y install lmdb && \
     yum clean all && \
-
     rm -rf /etc/openldap/slapd.d/* && \
     runuser -m -s /bin/mkdir -- "${CONST_LDAP_USER}" \
       "${CONST_LDAP_WORK_DIR}" "${CONST_LDAP_DATA_DIR}" && \

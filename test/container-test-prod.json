@@ -73,6 +73,7 @@
   ],
 
   "metadataTest": {
+    "env": [
       {
         "key": "CONST_LDAP_DATA_DIR",
         "value": "/home/ldap/openldap"

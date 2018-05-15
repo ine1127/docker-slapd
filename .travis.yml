@@ -14,11 +14,11 @@ install:
 - mv container-structure-test /home/travis/bin/container-structure-test
 
 before_script:
-- docker image build -t ine1127/docker-slapd .
-- docker image build -t ine1127/docker-slapd-test-base -f test/Dockerfile.test --target test-base .
-- docker image build -t ine1127/docker-slapd-test-mdb -f test/Dockerfile.test --target test-mdb .
-- docker image build -t ine1127/docker-slapd-test-bdb -f test/Dockerfile.test --target test-bdb .
+- docker image build -t ine1127/slapd .
+- docker image build -t ine1127/slapd-test-base -f test/Dockerfile.test --target test-base .
+- docker image build -t ine1127/slapd-test-mdb -f test/Dockerfile.test --target test-mdb .
+- docker image build -t ine1127/slapd-test-bdb -f test/Dockerfile.test --target test-bdb .
 
 script:
-- container-structure-test -test.v -image ine1127/docker-slapd test/container-test-prod.json
-- container-structure-test -test.v -image ine1127/docker-slapd-test-base test/container-test-base.json
+- container-structure-test -test.v -image ine1127/slapd test/container-test-prod.json
+- container-structure-test -test.v -image ine1127/slapd-test-base test/container-test-base.json

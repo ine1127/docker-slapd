@@ -1,4 +1,4 @@
-FROM ine1127/docker-slapd AS test-base
+FROM ine1127/slapd AS test-base
 LABEL maintainer "ine1127"
 LABEL use "Prebuild for test"
 

@@ -1,17 +1,15 @@
 #!/bin/bash
 
 function __echo_exec() {
-  echo "$@"
+  echo "$@" >&2
   eval "$@"
 }
 
 function __load_global_variables() {
   _BASE_DIR="$(dirname "$(readlink -f "$0")")"
-
   _CONTAINER_NAME="$(cat "${_BASE_DIR}/info/CONTAINER_NAME")"
   _VERSION="$(cat "${_BASE_DIR}/info/VERSION")"
   _IMAGE_REPO="$(cat "${_BASE_DIR}/info/IMAGE_REPO")"
-
   _IMAGE_NAME="${_IMAGE_REPO}/${_CONTAINER_NAME}:${_VERSION}"
   _HOSTNAME="$(hostname -f)"
 }
@@ -27,12 +25,13 @@ function __container_build() {
     --build-arg FTP_PROXY="${FTP_PROXY}" \
     --build-arg no_proxy="${no_PROXY}" \
     --build-arg NO_PROXY="${NO_PROXY}" \
-    "${_ADD_DOCKER_OPTS[@]}" \
+    "${_DOCKER_BUILD_OPTS}" \
     .
 }
 
 function __container_run() {
-  local _env_proxy="$( \
+  local readonly _env_proxy
+  _env_proxy="$( \
     printenv \
       | grep -i "_proxy=" \
       | while read -r x; do
@@ -40,12 +39,32 @@ function __container_run() {
     done \
   )"
 
+  local readonly _args1 _args2 _docker_args _exec_cmd
+  eval "$( \
+    echo "$@" \
+      | awk -F "--exec" '{print "_args1=\""$1"\"\n_args2=\""$2"\""}' \
+      | sed -e '/^$/d' \
+  )"
+
+  if [ ! -z "${_args2}" ]; then
+    _docker_args="${_args1}"
+    _exec_cmd="${_args2}"
+  else
+    echo "${_args1}" | grep '\--exec' > /dev/null 2>&1
+    local _status="$?"
+
+    if [ "${_status}" -eq "0" ]; then
+      _exec_cmd="$(echo "${_args1}" | sed -e 's/--exec //g')"
+    else
+      _docker_args="${_args1}"
+    fi
+  fi
+
   __echo_exec docker container run \
     -it --name "${_CONTAINER_NAME}" \
     --env-file "${_BASE_DIR}/etc/docker-container.conf" \
-    -p 389:10389 -p 636:10636 \
     "${_env_proxy}" "${_BOOT_STATE:-"-d=false"}" "${_ONCE}" \
-    "${_DOCKER_ARGS}" "${_IMAGE_NAME}" "${_EXEC_CMD}"
+    "${_docker_args}" "${_IMAGE_NAME}" "${_exec_cmd}"
 }
 
 function __container_start() {
@@ -77,10 +96,10 @@ function __image_remove() {
 }
 
 function __container_exec() {
-  __echo_exec docker container exec -it "${_CONTAINER_NAME}" "${_EXEC_CMD[@]}"
+  __echo_exec docker container exec -it "${_CONTAINER_NAME}" "$@"
 }
 
-function main() {
+function __main() {
   __load_global_variables
 
   if [ "$#" -ge 1 ]; then
@@ -106,51 +125,32 @@ function main() {
         esac
 
         shift 1
-        eval "$( \
-          echo "$@" \
-            | awk -F " --exec " '{print "_ARGS1=\""$1"\"\n_ARGS2=\""$2"\""}' \
-            | sed -e '/^$/d' \
-        )"
-
-        if [ ! -z "${_ARGS2}" ]; then
-          _DOCKER_ARGS="${_ARGS1}"
-          _EXEC_CMD="${_ARGS2}"
-        else
-          echo "${_ARGS1}" | grep '\--exec' > /dev/null 2>&1
-          local _status="$?"
-
-          if [ "${_status}" -eq "0" ]; then
-            _EXEC_CMD="$(echo "${_ARGS1}" | sed -e 's/--exec //g')"
-          else
-            _DOCKER_ARGS="${_ARGS1}"
-          fi
-        fi
-
-        __container_run
+        __container_run "$@"
       ;;
       build )
         shift 1
-        _ADD_DOCKER_OPTS=("$@")
+        _DOCKER_BUILD_OPTS="$@"
         __container_build  
       ;;
       rebuild )
-        _IMAGE_ID_BEFORE="$( \
+        local readonly _before_image _after_image
+        _before_image="$( \
           docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
             | grep "${_IMAGE_NAME}" \
             | awk '{print $1}' \
         )"
         shift 1
-        _ADD_DOCKER_OPTS=("$@")
+        _DOCKER_BUILD_OPTS="$@"
         __container_build
 
-        _IMAGE_ID_AFTER="$( \
+        _after_image="$( \
           docker image ls --format "{{.ID}} {{.Repository}}:{{.Tag}}" \
             | grep "${_IMAGE_NAME}" \
             | awk '{print $1}' \
         )"
-        if [ "${_IMAGE_ID_BEFORE}" != "${_IMAGE_ID_AFTER}" ]; then
-          if [ ! -z "${_IMAGE_ID_BEFORE}" ]; then
-            __echo_exec docker image rm "${_IMAGE_ID_BEFORE}"
+        if [ "${_before_image}" != "${_after_image}" ]; then
+          if [ ! -z "${_before_image}" ]; then
+            __echo_exec docker image rm "${_before_image}"
           fi
         fi
       ;;
@@ -180,13 +180,21 @@ function main() {
         __image_remove
       ;;
       login )
-        _EXEC_CMD=("/bin/bash")
-        __container_exec 
+        local _login_user _login_shell
+        _login_user="$( \
+          docker container inspect -f "{{.Config.User}}" "${_CONTAINER_NAME}" \
+        )"
+        _login_shell="$( \
+          __container_exec "cat /etc/passwd \
+            | grep "${_login_user}" \
+            | awk -F ':' '{print \$NF}' \
+            | tr -d \"\\r\"" 2> /dev/null \
+          )"
+        __container_exec "${_login_shell}"
       ;;
       exec )
         shift 1
-        _EXEC_CMD=("$@")
-        __container_exec 
+        __container_exec "$@"
       ;;
       * )
         echo "missing operand" >&2
@@ -195,4 +203,4 @@ function main() {
   fi
 }
 
-main "$@"
+__main "$@"

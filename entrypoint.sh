@@ -36,43 +36,49 @@ Command:
 EOL
 }
 
-_ARG="$1"
-if [ ! -z "${_ARG}" ]; then
-  case "${_ARG}" in
-    --help|-h|help|--usage|usage )
-      __usage
-    ;;
-    start|init )
-      __slapd_load_domain
-      __slapd_deploy
-      __slapd_install
-      __slapd_test
-      __slapd_cleanup
+function __main() {
+  local readonly _argument="$1"
 
-      case "${_ARG}" in
-        start )
-          __slapd_start
-        ;;
-      esac
+  if [ ! -z "${_argument}" ]; then
+    case "${_argument}" in
+      --help|-h|help|--usage|usage )
+        __usage
+      ;;
+      start|init )
+        __slapd_load_domain
+        __slapd_deploy
+        __slapd_install
+        __slapd_test
+        __slapd_cleanup
 
-    ;;
-    stop )
-      __slapd_stop
-    ;;
-    status )
-      __slapd_status
-    ;;
-    backup_config )
-      __slapd_backup config
-    ;;
-    backup_dbdata )
-      __slapd_backup dbdata
-    ;;
-    * )
-      exec "$@"
-    ;;
-  esac
-else
-  __usage
-  exit 1
-fi
+        case "${_argument}" in
+          start )
+            __slapd_start
+          ;;
+        esac
+
+      ;;
+      stop )
+        __slapd_stop
+      ;;
+      status )
+        __slapd_status
+      ;;
+      backup_config )
+        __slapd_backup config
+      ;;
+      backup_dbdata )
+        __slapd_backup dbdata
+      ;;
+      * )
+        exec "$@"
+      ;;
+    esac
+
+  else
+    __usage
+    exit 1
+  fi
+}
+
+__main "$@"

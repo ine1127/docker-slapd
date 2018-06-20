@@ -7,7 +7,7 @@ ARG LDAP_GRP="ldap"
 ARG LDAP_UID="55"
 ARG LDAP_GID="55"
 
-ENV CONST_LDAP_USR="${LDAP_USR}" \
+ENV CONST_LDAP_USR="${LDAP_USR:-ldap}" \
     CONST_LDAP_DATA_DIR="${LDAP_HOME_DIR}/openldap" \
     CONST_LDAP_RUNTIME_DIR="${LDAP_HOME_DIR}/runtime" \
     CONST_LDAP_WORK_DIR="${LDAP_HOME_DIR}/work"
@@ -24,7 +24,7 @@ RUN groupadd \
       -g "${LDAP_GRP}" \
       -u "${LDAP_UID}" \
       -d "${LDAP_HOME_DIR}" \
-      -s "/bin/bash" \
+      -s "/sbin/nologin" \
       -c "LDAP User" \
          "${LDAP_USR}" && \
     yum -y update && \

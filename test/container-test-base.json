@@ -11,17 +11,6 @@
       "expectedOutput": [
         "55"
       ]
-    },
-    {
-      "name": "inotify-tools",
-      "command": "rpm",
-      "args": [
-        "-qa",
-        "inotify-tools"
-      ],
-      "expectedOutput": [
-        "inotify-tools-*"
-      ]
     }
   ],
   "fileExistenceTests": [
@@ -179,6 +168,10 @@
 
   "metadataTest": {
     "env": [
+      {
+        "key": "CONST_LDAP_USR",
+        "value": "ldap"
+      },
       {
         "key": "CONST_LDAP_DATA_DIR",
         "value": "/home/ldap/openldap-test"

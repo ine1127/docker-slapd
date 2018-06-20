@@ -1,4 +1,4 @@
-# docker-slapd
+# slapd:0.4.6
 
 ![TravisCI Status](https://travis-ci.org/ine1127/docker-slapd.svg?branch=master)
 
@@ -7,10 +7,16 @@ Dockernized OpenLDAP Server
 # Download
 
 ```shell-session
-user@linux:~$ git clone https://github.com/ine1127/docker-slapd.git
+user@linux:~$ docker pull ine1127/slapd:0.4.6
 ```
 
 # Build
+
+```
+user@linux:~$ git clone https://github.com/ine1127/docker-slapd.git
+```
+
+---
 
 ```shell-session
 user@linux:~$ ./docker-service.sh build
@@ -34,13 +40,14 @@ user@linux:$ docker build --tag=ine1127/slapd:0.4.6 \
 # Quick Start
 
 ```shell-session
-user@linux:~$ ./docker-service.sh onceboot
+user@linux:~$ ./docker-service.sh onceboot -p 389:10389 -p 636:10636
 ```
 
 or
 
 ```shell-session
-user@linux:~$ docker run --name slapd --rm ine1127/slapd:0.4.6
+user@linux:~$ docker run --name slapd --rm \
+                -p 389:10389 -p 636:10636 ine1127/slapd:0.4.6
 ```
 
 # Data Store
@@ -60,8 +67,8 @@ Volumes can be mounted in docker by specifying the `-v` option in the docker run
 
 ```shell-session
 user@linux:~$ docker run --name slapd --rm \
-                --volume /srv/slapd/openldap:/home/ldap/openldap \
                 -p 389:10389 -p 636:10636 \
+                --volume /srv/slapd/openldap:/home/ldap/openldap \
                 ine1127/slapd:0.4.6
 ```
 
